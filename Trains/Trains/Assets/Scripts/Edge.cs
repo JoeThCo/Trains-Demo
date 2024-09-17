@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Splines;
 
 public class Edge
 {
@@ -11,5 +12,10 @@ public class Edge
     {
         this.ToNode = toNode;
         this.FromNode = fromNode;
+    }
+
+    public List<BezierKnot> GetKnots()
+    {
+        return new List<BezierKnot> { ToNode.Knot, FromNode.Knot };
     }
 }
