@@ -13,7 +13,7 @@ public class GraphGeneratorEditor : Editor
         GraphGenerator graphGenerator = target as GraphGenerator;
         if (GUILayout.Button("Split Splines")) 
         {
-            graphGenerator.SplitGraph();    
+            graphGenerator.SplitSplines();    
         }
     }
 }

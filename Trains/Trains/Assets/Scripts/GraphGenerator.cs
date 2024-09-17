@@ -6,9 +6,8 @@ using UnityEngine.Splines;
 
 public class GraphGenerator : MonoBehaviour
 {
-
     private SplineContainer splineContainer;
-    public void SplitGraph()
+    public void SplitSplines()
     {
         splineContainer = FindObjectOfType<SplineContainer>();
     }
