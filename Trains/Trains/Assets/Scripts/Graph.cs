@@ -8,7 +8,7 @@ public class Graph
 {
     public List<Node> Nodes { get; private set; }
     public List<Edge> Edges { get; private set; }
-
+    public int[,] AdjacencyMatrix { get; private set; }
     private Dictionary<Vector3, Node> PositionToNodeMap;
 
     public Graph(SplineContainer splineContainer)
@@ -22,6 +22,10 @@ public class Graph
         PositionToNodeMap = CreateNodePositionMap(Nodes);
         Edges = CreateEdges(splineContainer);
         Debug.Log($"Edges: {Edges.Count}");
+
+        AdjacencyMatrix = new int[Nodes.Count, Nodes.Count];
+        AdjacencyMatrix = CreateAdjacencyMatrix(Nodes, Edges);
+        SetDegrees(Nodes);
     }
 
     #region Nodes
@@ -54,6 +58,32 @@ public class Graph
 
         return output;
     }
+
+    void SetDegrees(List<Node> nodes)
+    {
+        foreach (Node node in nodes)
+        {
+            (int, int) degrees = GetDegrees(node.Index);
+            node.SetDegrees(degrees.Item1, degrees.Item2);
+        }
+    }
+
+    public (int, int) GetDegrees(int index)
+    {
+        if (index < 0 || index >= Nodes.Count)
+            return (0, 0);
+
+        int inDegree = 0;
+        int outDegree = 0;
+        for (int i = 0; i < Nodes.Count; i++)
+        {
+            inDegree += AdjacencyMatrix[i, index];
+            outDegree += AdjacencyMatrix[index, i];
+        }
+
+        return (inDegree, outDegree);
+    }
+
     #endregion
 
     #region Edge
@@ -73,8 +103,8 @@ public class Graph
                 Node nodeA = PositionToNodeMap[posA];
                 Node nodeB = PositionToNodeMap[posB];
 
-                output.Add(new Edge(nodeA, nodeB));
-                output.Add(new Edge(nodeB, nodeA));
+                output.Add(new Edge(output.Count, nodeA, nodeB));
+                output.Add(new Edge(output.Count, nodeB, nodeA));
             }
 
             if (spline.Closed)
@@ -85,10 +115,24 @@ public class Graph
                 Node nodeA = PositionToNodeMap[posA];
                 Node nodeB = PositionToNodeMap[posB];
 
-                output.Add(new Edge(nodeA, nodeB));
-                output.Add(new Edge(nodeB, nodeA));
+                output.Add(new Edge(output.Count, nodeA, nodeB));
+                output.Add(new Edge(output.Count, nodeB, nodeA));
             }
         }
+
+        return output;
+    }
+
+    private int[,] CreateAdjacencyMatrix(List<Node> nodes, List<Edge> edges)
+    {
+        int[,] output = new int[nodes.Count, nodes.Count];
+
+        for (int y = 0; y < nodes.Count; y++)
+            for (int x = 0; x < nodes.Count; x++)
+                output[x, y] = 0;
+
+        foreach (Edge edge in edges)
+            AdjacencyMatrix[edge.FromNode.Index, edge.ToNode.Index] = 1;
 
         return output;
     }

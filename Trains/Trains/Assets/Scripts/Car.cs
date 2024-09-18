@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -9,15 +10,14 @@ public class Car : MonoBehaviour
 {
     public Train Train { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
-    [SerializeField] private SplineContainer rail;
 
-    private Spline currentSpline;
+    [SerializeField] private SplineContainer graphSpline;
+
     public const float MAX_JUNCTION_ANGLE = 30f;
 
     private void Start()
     {
         Rigidbody = GetComponent<Rigidbody>();
-        currentSpline = rail.Splines[0];
     }
 
     public void Throttle(float power)
@@ -30,24 +30,17 @@ public class Car : MonoBehaviour
         Train = train;
     }
 
-    public void SetSpline(Spline spline)
-    {
-        currentSpline = spline;
-    }
-
-    //TODO put in methods
     private void FixedUpdate()
     {
-        //get spline information
-        NativeSpline native = new NativeSpline(currentSpline);
-        SplineUtility.GetNearestPoint(native, transform.position, out float3 nearest, out float t);
+        NativeSpline nativeGraph = new NativeSpline(graphSpline.Splines[0]);
+        SplineUtility.GetNearestPoint(nativeGraph, transform.position, out float3 nearestGraph, out float t);
 
         //set to nearest point
-        transform.position = new float3(nearest.x, rail.transform.position.y, nearest.z);
+        Rigidbody.position = (Vector3)nearestGraph;
 
         //get the new directions
-        Vector3 forward = Vector3.Normalize(native.EvaluateTangent(t));
-        Vector3 up = native.EvaluateUpVector(t);
+        Vector3 forward = Vector3.Normalize(nativeGraph.EvaluateTangent(t));
+        Vector3 up = nativeGraph.EvaluateUpVector(t);
 
         //set the new rotation
         transform.rotation = Quaternion.LookRotation(forward, up) * Quaternion.Inverse(Quaternion.LookRotation(Vector3.forward, Vector3.up));
@@ -62,7 +55,7 @@ public class Car : MonoBehaviour
         Rigidbody.velocity = Rigidbody.velocity.magnitude * engineForward;
     }
 
-    public float GetDirectionDot()
+    private float GetDirectionDot()
     {
         return Vector3.Dot(Rigidbody.velocity, transform.forward);
     }
