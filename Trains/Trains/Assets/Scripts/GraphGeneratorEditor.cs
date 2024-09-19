@@ -11,9 +11,9 @@ public class GraphGeneratorEditor : Editor
         base.OnInspectorGUI();
 
         GraphGenerator graphGenerator = target as GraphGenerator;
-        if (GUILayout.Button("Split Splines"))
+        if (GUILayout.Button("Final Graph"))
         {
-            graphGenerator.SplitSplines();
+            graphGenerator.MakeFinalGraph();
         }
 
         if (GUILayout.Button("Delete Debug"))

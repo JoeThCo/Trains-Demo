@@ -17,15 +17,15 @@ public class Graph
         Edges = new List<Edge>();
 
         Nodes = CreateNodes(GetUniqueKnots(splineContainer).Values.ToArray());
-        Debug.Log($"Nodes: {Nodes.Count}");
 
         PositionToNodeMap = CreateNodePositionMap(Nodes);
         Edges = CreateEdges(splineContainer);
-        Debug.Log($"Edges: {Edges.Count}");
 
         AdjacencyMatrix = new int[Nodes.Count, Nodes.Count];
         AdjacencyMatrix = CreateAdjacencyMatrix(Nodes, Edges);
         SetDegrees(Nodes);
+
+        Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
     }
 
     #region Nodes
