@@ -8,9 +8,9 @@ public class Node
     public int Index { get; private set; }
     public BezierKnot Knot { get; private set; }
     public Vector3 Position { get; private set; }
+    public Degrees Degrees { get; private set; }
 
-    public int InDegree { get; private set; }
-    public int OutDegree { get; private set; }
+    public bool IsJunction { get; private set; }
 
     public Node(int index, BezierKnot knot)
     {
@@ -19,10 +19,10 @@ public class Node
         Position = knot.Position;
     }
 
-    public void SetDegrees(int inDegree, int outDegree)
+    public void SetDegrees(Degrees degrees)
     {
-        InDegree = inDegree;
-        OutDegree = outDegree;
+        Degrees = degrees;
+        IsJunction = Degrees.InDegree > 2 || Degrees.OutDegree > 2;
     }
 
     public override string ToString()

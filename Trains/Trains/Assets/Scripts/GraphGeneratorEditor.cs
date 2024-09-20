@@ -10,16 +10,23 @@ public class GraphGeneratorEditor : Editor
     {
         base.OnInspectorGUI();
 
+        GUILayout.Space(10);
+
         GraphGenerator graphGenerator = target as GraphGenerator;
         if (GUILayout.Button("Create Final Splines"))
         {
+            graphGenerator.ResetGraphGenerator();
             graphGenerator.CreateFinalSplines();
         }
 
         if (GUILayout.Button("Create Gameplay"))
         {
-            graphGenerator.CreateGamePlay();
+            graphGenerator.ResetGraphGenerator();
+            graphGenerator.CreateFinalSplines();
+            graphGenerator.CreateGameplay();
         }
+
+        GUILayout.Space(10);
 
         if (GUILayout.Button("Reset"))
         {

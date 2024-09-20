@@ -9,7 +9,7 @@ public class Graph
     public List<Node> Nodes { get; private set; }
     public List<Edge> Edges { get; private set; }
     public int[,] AdjacencyMatrix { get; private set; }
-    private Dictionary<Vector3, Node> PositionToNodeMap;
+    public Dictionary<Vector3, Node> PositionToNodeMap { get; private set; }
 
     public Graph(SplineContainer splineContainer)
     {
@@ -23,8 +23,8 @@ public class Graph
 
         AdjacencyMatrix = new int[Nodes.Count, Nodes.Count];
         AdjacencyMatrix = CreateAdjacencyMatrix(Nodes, Edges);
-        SetDegrees(Nodes);
 
+        SetDegrees(Nodes, AdjacencyMatrix);
         Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
     }
 
@@ -59,29 +59,23 @@ public class Graph
         return output;
     }
 
-    void SetDegrees(List<Node> nodes)
+    void SetDegrees(List<Node> nodes, int[,] adjacencyMatrix)
     {
         foreach (Node node in nodes)
-        {
-            (int, int) degrees = GetDegrees(node.Index);
-            node.SetDegrees(degrees.Item1, degrees.Item2);
-        }
+            node.SetDegrees(GetDegrees(node, adjacencyMatrix));
     }
 
-    public (int, int) GetDegrees(int index)
+    public Degrees GetDegrees(Node node, int[,] adjacencyMatrix)
     {
-        if (index < 0 || index >= Nodes.Count)
-            return (0, 0);
-
         int inDegree = 0;
         int outDegree = 0;
         for (int i = 0; i < Nodes.Count; i++)
         {
-            inDegree += AdjacencyMatrix[i, index];
-            outDegree += AdjacencyMatrix[index, i];
+            inDegree += adjacencyMatrix[i, node.Index];
+            outDegree += adjacencyMatrix[node.Index, i];
         }
 
-        return (inDegree, outDegree);
+        return new Degrees(inDegree, outDegree);
     }
 
     #endregion
@@ -127,12 +121,8 @@ public class Graph
     {
         int[,] output = new int[nodes.Count, nodes.Count];
 
-        for (int y = 0; y < nodes.Count; y++)
-            for (int x = 0; x < nodes.Count; x++)
-                output[x, y] = 0;
-
         foreach (Edge edge in edges)
-            AdjacencyMatrix[edge.FromNode.Index, edge.ToNode.Index] = 1;
+            output[edge.FromNode.Index, edge.ToNode.Index] = 1;
 
         return output;
     }

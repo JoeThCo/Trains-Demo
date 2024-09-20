@@ -11,13 +11,14 @@ public class Car : MonoBehaviour
     public Train Train { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
 
-    [SerializeField] private SplineContainer graphSpline;
-
     public const float MAX_JUNCTION_ANGLE = 30f;
+
+    private Spline currentSpline;
 
     private void Start()
     {
         Rigidbody = GetComponent<Rigidbody>();
+        currentSpline = GraphGenerator.LessThanSplinesContainer[0];
     }
 
     public void Throttle(float power)
@@ -32,7 +33,7 @@ public class Car : MonoBehaviour
 
     private void FixedUpdate()
     {
-        NativeSpline nativeGraph = new NativeSpline(graphSpline.Splines[0]);
+        NativeSpline nativeGraph = new NativeSpline(currentSpline);
         SplineUtility.GetNearestPoint(nativeGraph, transform.position, out float3 nearestGraph, out float t);
 
         //set to nearest point

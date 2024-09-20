@@ -7,7 +7,7 @@ using UnityEngine.Splines;
 
 public class GraphGenerator : MonoBehaviour
 {
-    #region Make Final Graph Vars
+    #region Create Final Graph Vars
     [Header("Create Final Splines")]
     [SerializeField] private bool DisplayDebug = false;
     [SerializeField][Range(.1f, 5f)] private float distanceStep = .5f;
@@ -15,8 +15,8 @@ public class GraphGenerator : MonoBehaviour
     private SplineContainer lessIndexToGreaterIndex;
     private SplineContainer greaterIndexToLessIndex;
 
-    private SplineContainer finalLessThanSplinesContainer;
-    private SplineContainer finalGreaterThanSplinesContainer;
+    public static SplineContainer LessThanSplinesContainer;
+    public static SplineContainer GreaterThanSplinesContainer;
 
     private NodeVisualization NodePrefab;
     private EdgeVisualization EdgePrefab;
@@ -25,18 +25,37 @@ public class GraphGenerator : MonoBehaviour
     private GameObject edgesParent;
     #endregion
 
+    #region CreateGameplay Vars
+    private Junction junctionPrefab;
+
+    private GameObject junctionHolder;
+    #endregion
+
     public static Graph Graph;
 
-    public void CreateGamePlay()
+    private void Start()
     {
-        CreateFinalSplines();
+        ResetGraphGenerator();
 
+        CreateFinalSplines();
+        CreateGameplay();
+    }
+
+    public void CreateGameplay()
+    {
+        junctionHolder = new GameObject("Junction Holder");
+        junctionHolder.transform.parent = transform;
+
+        junctionPrefab = Resources.Load<Junction>("Junction");
+
+        foreach (Node node in Graph.Nodes)
+        {
+            SpawnJunction(node);
+        }
     }
 
     public void CreateFinalSplines()
     {
-        ResetGraphGenerator();
-
         //get input
         SplineContainer inputSplineContainer = GetComponent<SplineContainer>();
 
@@ -58,10 +77,10 @@ public class GraphGenerator : MonoBehaviour
 
         //add final splines to correct container
         foreach (Spline less in GetFinalSplines(inputSplines, lessThanSplines, distanceStep))
-            finalLessThanSplinesContainer.AddSpline(less);
+            LessThanSplinesContainer.AddSpline(less);
 
         foreach (Spline greater in GetFinalSplines(inputSplines, greaterThanSplines, distanceStep))
-            finalGreaterThanSplinesContainer.AddSpline(greater);
+            GreaterThanSplinesContainer.AddSpline(greater);
 
         //draw debug info
         if (DisplayDebug)
@@ -86,6 +105,16 @@ public class GraphGenerator : MonoBehaviour
         RemoveChildren();
     }
 
+    #region CreateGameplay
+    private Junction SpawnJunction(Node node)
+    {
+        Junction newJunction = Instantiate(junctionPrefab, node.Position, Quaternion.identity, junctionHolder.transform).GetComponent<Junction>();
+        newJunction.JunctionInit(node);
+        return newJunction;
+    }
+    #endregion
+
+    #region Create Final Spline Methods
     #region Helpers
     void CreateObjects()
     {
@@ -110,13 +139,13 @@ public class GraphGenerator : MonoBehaviour
         //final output slines
         GameObject finalLessThanSplinesGameObject = new GameObject("Final Less Than Splines");
         finalLessThanSplinesGameObject.transform.parent = transform;
-        finalLessThanSplinesContainer = finalLessThanSplinesGameObject.AddComponent<SplineContainer>();
-        finalLessThanSplinesContainer.RemoveSplineAt(0);
+        LessThanSplinesContainer = finalLessThanSplinesGameObject.AddComponent<SplineContainer>();
+        LessThanSplinesContainer.RemoveSplineAt(0);
 
         GameObject finalGreaterThanSplinesGameObject = new GameObject("Final Greater Than Splines");
         finalGreaterThanSplinesGameObject.transform.parent = transform;
-        finalGreaterThanSplinesContainer = finalGreaterThanSplinesGameObject.AddComponent<SplineContainer>();
-        finalGreaterThanSplinesContainer.RemoveSplineAt(0);
+        GreaterThanSplinesContainer = finalGreaterThanSplinesGameObject.AddComponent<SplineContainer>();
+        GreaterThanSplinesContainer.RemoveSplineAt(0);
     }
 
 
@@ -317,5 +346,6 @@ public class GraphGenerator : MonoBehaviour
             points.AddRange(GetInterpolatedSplinePoints(spline, distanceStep));
         return points;
     }
+    #endregion
     #endregion
 }

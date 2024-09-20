@@ -4,15 +4,24 @@ using UnityEngine;
 
 public class Junction : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField] private MeshRenderer debugMeshRenderer;
+    public Node Node { get; private set; }
+
+    public void JunctionInit(Node node)
     {
-        
+        Node = node;
+        gameObject.name = $"Junction {Node.Index}";
+
+        if (!Node.IsJunction)
+            debugMeshRenderer.enabled = false;
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnTriggerEnter(Collider other)
     {
-        
+        Engine engine = other.gameObject.GetComponentInParent<Engine>();
+        if (engine)
+        {
+            Debug.Log($"Collision with Junction {Node.Index}");
+        }
     }
 }
