@@ -7,10 +7,10 @@ using UnityEngine.Splines;
 
 public class GraphGenerator : MonoBehaviour
 {
+    #region Make Final Graph Vars
+    [Header("Create Final Splines")]
     [SerializeField] private bool DisplayDebug = false;
     [SerializeField][Range(.1f, 5f)] private float distanceStep = .5f;
-
-    public static Graph Graph;
 
     private SplineContainer lessIndexToGreaterIndex;
     private SplineContainer greaterIndexToLessIndex;
@@ -23,20 +23,26 @@ public class GraphGenerator : MonoBehaviour
 
     private GameObject nodesParent;
     private GameObject edgesParent;
+    #endregion
 
-    public void MakeFinalGraph()
+    public static Graph Graph;
+
+    public void CreateGamePlay()
     {
-        DeleteDebug();
+        CreateFinalSplines();
 
-        SplineContainer inputSplineContainer = FindObjectOfType<SplineContainer>();
+    }
+
+    public void CreateFinalSplines()
+    {
+        ResetGraphGenerator();
+
+        //get input
+        SplineContainer inputSplineContainer = GetComponent<SplineContainer>();
+
+        //load prefabs
         NodePrefab = Resources.Load<NodeVisualization>("Node");
         EdgePrefab = Resources.Load<EdgeVisualization>("Edge");
-
-        nodesParent = new GameObject("Nodes Parent");
-        nodesParent.transform.parent = transform;
-
-        edgesParent = new GameObject("Egdes Parent");
-        edgesParent.transform.parent = transform;
 
         CreateObjects();
 
@@ -63,7 +69,7 @@ public class GraphGenerator : MonoBehaviour
             DisplayNodeDebug(Graph);
             DisplayEdgeDebug(Graph);
         }
-        else 
+        else
         {
             DestroyImmediate(nodesParent.gameObject);
             DestroyImmediate(edgesParent.gameObject);
@@ -74,8 +80,22 @@ public class GraphGenerator : MonoBehaviour
         DestroyImmediate(greaterIndexToLessIndex.gameObject);
     }
 
+    public void ResetGraphGenerator()
+    {
+        Graph = null;
+        RemoveChildren();
+    }
+
+    #region Helpers
     void CreateObjects()
     {
+        //debug info
+        nodesParent = new GameObject("Nodes Parent");
+        nodesParent.transform.parent = transform;
+
+        edgesParent = new GameObject("Egdes Parent");
+        edgesParent.transform.parent = transform;
+
         //First passs output slines
         GameObject FromToToGameObject = new GameObject("From -> To Splines");
         FromToToGameObject.transform.parent = transform;
@@ -99,7 +119,7 @@ public class GraphGenerator : MonoBehaviour
         finalGreaterThanSplinesContainer.RemoveSplineAt(0);
     }
 
-    #region Helpers
+
     private NodeVisualization SpawnNode(Node node)
     {
         NodeVisualization nodeVisulization = Instantiate(NodePrefab, node.Position, Quaternion.identity, nodesParent.transform).GetComponent<NodeVisualization>();
@@ -116,7 +136,7 @@ public class GraphGenerator : MonoBehaviour
     #endregion
 
     #region Debug
-    public void DeleteDebug()
+    public void RemoveChildren()
     {
         while (transform.childCount > 0)
         {
@@ -144,6 +164,7 @@ public class GraphGenerator : MonoBehaviour
     }
     #endregion
 
+    #region Spline 
     private List<Spline> GetSplinesFromEdge(Graph graph, bool wantLessThan)
     {
         List<Spline> splines = new List<Spline>();
@@ -180,7 +201,7 @@ public class GraphGenerator : MonoBehaviour
         {
             List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
             HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>();
-            
+
             foreach (Vector3 point in splinePoints)
             {
                 Vector3 nearestInputPoint = FindClosestPoint(point, inputPoints);
@@ -201,7 +222,7 @@ public class GraphGenerator : MonoBehaviour
             foreach (Vector3 point in outputPoints)
             {
                 newSpline.Add(point);
-                
+
                 if (!DisplayDebug) continue;
                 GameObject debugPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 debugPoint.transform.position = point;
@@ -215,7 +236,6 @@ public class GraphGenerator : MonoBehaviour
         return splines;
     }
 
-    #region Final Spline Helpers
     private Vector3 FindClosestPoint(Vector3 inputPoint, HashSet<Vector3> points)
     {
         Vector3 closestPoint = Vector3.zero;
@@ -281,8 +301,8 @@ public class GraphGenerator : MonoBehaviour
         {
             float t = currentLength / totalLength;
             position = spline.EvaluatePosition(t);
-            
-            if(!points.Contains(position)) points.Add(position);
+
+            if (!points.Contains(position)) points.Add(position);
             currentLength += distanceStep;
         }
         points.Add(spline.EvaluatePosition(1));

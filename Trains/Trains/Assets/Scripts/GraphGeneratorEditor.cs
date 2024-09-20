@@ -11,14 +11,19 @@ public class GraphGeneratorEditor : Editor
         base.OnInspectorGUI();
 
         GraphGenerator graphGenerator = target as GraphGenerator;
-        if (GUILayout.Button("Final Graph"))
+        if (GUILayout.Button("Create Final Splines"))
         {
-            graphGenerator.MakeFinalGraph();
+            graphGenerator.CreateFinalSplines();
         }
 
-        if (GUILayout.Button("Delete Debug"))
+        if (GUILayout.Button("Create Gameplay"))
         {
-            graphGenerator.DeleteDebug();
+            graphGenerator.CreateGamePlay();
+        }
+
+        if (GUILayout.Button("Reset"))
+        {
+            graphGenerator.ResetGraphGenerator();
         }
     }
 }
