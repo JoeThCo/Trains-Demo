@@ -178,9 +178,9 @@ public class GraphGenerator : MonoBehaviour
 
         foreach (Spline spline in graphSlines)
         {
-            HashSet<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
+            List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
             HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>();
-
+            
             foreach (Vector3 point in splinePoints)
             {
                 Vector3 nearestInputPoint = FindClosestPoint(point, inputPoints);
@@ -190,8 +190,8 @@ public class GraphGenerator : MonoBehaviour
 
             HashSet<Vector3> outputPoints = MakeEqualDistanced(outputSplinePoints.ToArray(), distanceStep);
             Spline newSpline = new Spline();
-            GameObject debugSplineHolder = null;
 
+            GameObject debugSplineHolder = null;
             if (DisplayDebug)
             {
                 debugSplineHolder = new GameObject("Final Debug Holder");
@@ -201,12 +201,12 @@ public class GraphGenerator : MonoBehaviour
             foreach (Vector3 point in outputPoints)
             {
                 newSpline.Add(point);
-                if (DisplayDebug)
-                {
-                    GameObject debugPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    debugPoint.transform.position = point;
-                    debugPoint.transform.parent = debugSplineHolder.transform;
-                }
+                
+                if (!DisplayDebug) continue;
+                GameObject debugPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                debugPoint.transform.position = point;
+                debugPoint.transform.parent = debugSplineHolder.transform;
+                DestroyImmediate(debugPoint.GetComponent<SphereCollider>());
             }
 
             splines.Add(newSpline);
@@ -269,20 +269,24 @@ public class GraphGenerator : MonoBehaviour
         return equalDistancePoints;
     }
 
-    private HashSet<Vector3> GetInterpolatedSplinePoints(Spline spline, float distanceStep)
+    private List<Vector3> GetInterpolatedSplinePoints(Spline spline, float distanceStep)
     {
-        HashSet<Vector3> points = new HashSet<Vector3>();
+        List<Vector3> points = new List<Vector3>();
         float totalLength = spline.GetLength();
         float currentLength = 0f;
+        Vector3 position = spline.EvaluatePosition(0);
+        points.Add(position);
 
         while (currentLength < totalLength)
         {
             float t = currentLength / totalLength;
-            Vector3 position = spline.EvaluatePosition(t);
-            points.Add(position);
-
+            position = spline.EvaluatePosition(t);
+            
+            if(!points.Contains(position)) points.Add(position);
             currentLength += distanceStep;
         }
+        points.Add(spline.EvaluatePosition(1));
+
         return points;
     }
 
