@@ -15,7 +15,8 @@ public class GraphGenerator : MonoBehaviour
     private SplineContainer lessIndexToGreaterIndex;
     private SplineContainer greaterIndexToLessIndex;
 
-    private SplineContainer finalSplineContainer;
+    private SplineContainer finalLessThanSplines;
+    private SplineContainer finalGreaterThanSplines;
 
     private NodeVisualization NodePrefab;
     private EdgeVisualization EdgePrefab;
@@ -37,6 +38,31 @@ public class GraphGenerator : MonoBehaviour
         edgesParent = new GameObject("Egdes Parent");
         edgesParent.transform.parent = transform;
 
+        CreateObjects();
+        DisplayGraphSplines(inputSplineContainer);
+
+        List<Spline> lessThanSplines = GetFinalSplines(inputSplineContainer, lessIndexToGreaterIndex, distanceStep);
+        List<Spline> greaterThanSplines = GetFinalSplines(inputSplineContainer, greaterIndexToLessIndex, distanceStep);
+
+        foreach (Spline less in lessThanSplines)
+            finalLessThanSplines.AddSpline(less);
+
+        foreach (Spline greater in greaterThanSplines)
+            finalGreaterThanSplines.AddSpline(greater);
+
+        if (!DisplayDebug) 
+        {
+            DestroyImmediate(nodesParent.gameObject);
+            DestroyImmediate(edgesParent.gameObject);
+        }
+        
+        DestroyImmediate(lessIndexToGreaterIndex.gameObject);
+        DestroyImmediate(greaterIndexToLessIndex.gameObject);
+    }
+
+    void CreateObjects()
+    {
+        //First passs output slines
         GameObject FromToToGameObject = new GameObject("From -> To Splines");
         FromToToGameObject.transform.parent = transform;
         lessIndexToGreaterIndex = FromToToGameObject.AddComponent<SplineContainer>();
@@ -47,15 +73,16 @@ public class GraphGenerator : MonoBehaviour
         greaterIndexToLessIndex = ToToFromGameObject.AddComponent<SplineContainer>();
         greaterIndexToLessIndex.RemoveSplineAt(0);
 
-        DisplayGraphSplines(inputSplineContainer);
+        //final output slines
+        GameObject finalLessThanSplinesGameObject = new GameObject("Final Less Than Splines");
+        finalLessThanSplinesGameObject.transform.parent = transform;
+        finalLessThanSplines = finalLessThanSplinesGameObject.AddComponent<SplineContainer>();
+        finalLessThanSplines.RemoveSplineAt(0);
 
-        GameObject finalSplineGameObject = new GameObject("Final Splines");
-        finalSplineGameObject.transform.parent = transform;
-        finalSplineContainer = finalSplineGameObject.AddComponent<SplineContainer>();
-        finalSplineContainer.RemoveSplineAt(0);
-
-        GetFinalSplines(inputSplineContainer, lessIndexToGreaterIndex, distanceStep);
-        GetFinalSplines(inputSplineContainer, greaterIndexToLessIndex, distanceStep);
+        GameObject finalGreaterThanSplinesGameObject = new GameObject("Final Greater Than Splines");
+        finalGreaterThanSplinesGameObject.transform.parent = transform;
+        finalGreaterThanSplines = finalGreaterThanSplinesGameObject.AddComponent<SplineContainer>();
+        finalGreaterThanSplines.RemoveSplineAt(0);
     }
 
     #region Helpers
@@ -88,14 +115,18 @@ public class GraphGenerator : MonoBehaviour
     private void DisplayGraphSplines(SplineContainer inputSplineContainer)
     {
         Graph = new Graph(inputSplineContainer);
-        foreach (Node node in Graph.Nodes)
-        {
-            SpawnNode(node);
-        }
 
-        foreach (Edge edge in Graph.Edges)
+        if (DisplayDebug) 
         {
-            SpawnEdge(edge);
+            foreach (Node node in Graph.Nodes)
+            {
+                SpawnNode(node);
+            }
+
+            foreach (Edge edge in Graph.Edges)
+            {
+                SpawnEdge(edge);
+            }
         }
 
         for (int i = 0; i < Graph.Edges.Count; i++)
@@ -116,8 +147,9 @@ public class GraphGenerator : MonoBehaviour
             spline.SetTangentMode(TangentMode.AutoSmooth);
     }
 
-    private void GetFinalSplines(SplineContainer inputSplineContainer, SplineContainer graphSplineContainer, float distanceStep)
+    private List<Spline> GetFinalSplines(SplineContainer inputSplineContainer, SplineContainer graphSplineContainer, float distanceStep)
     {
+        List<Spline> splines = new List<Spline>();
         HashSet<Vector3> inputPoints = GetInterpolatedSplineContainerPoints(inputSplineContainer, distanceStep);
         GameObject debugFinalDebugHolder = null;
 
@@ -160,8 +192,10 @@ public class GraphGenerator : MonoBehaviour
                 }
             }
 
-            finalSplineContainer.AddSpline(newSpline);
+            splines.Add(newSpline);
         }
+
+        return splines;
     }
 
     #region Final Spline Helpers
