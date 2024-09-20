@@ -15,8 +15,8 @@ public class GraphGenerator : MonoBehaviour
     private SplineContainer lessIndexToGreaterIndex;
     private SplineContainer greaterIndexToLessIndex;
 
-    private SplineContainer finalLessThanSplines;
-    private SplineContainer finalGreaterThanSplines;
+    private SplineContainer finalLessThanSplinesContainer;
+    private SplineContainer finalGreaterThanSplinesContainer;
 
     private NodeVisualization NodePrefab;
     private EdgeVisualization EdgePrefab;
@@ -39,23 +39,37 @@ public class GraphGenerator : MonoBehaviour
         edgesParent.transform.parent = transform;
 
         CreateObjects();
-        DisplayGraphSplines(inputSplineContainer);
 
-        List<Spline> lessThanSplines = GetFinalSplines(inputSplineContainer, lessIndexToGreaterIndex, distanceStep);
-        List<Spline> greaterThanSplines = GetFinalSplines(inputSplineContainer, greaterIndexToLessIndex, distanceStep);
+        //get edge/node info
+        Graph = new Graph(inputSplineContainer);
 
-        foreach (Spline less in lessThanSplines)
-            finalLessThanSplines.AddSpline(less);
+        //get input splines
+        List<Spline> inputSplines = inputSplineContainer.Splines.ToList();
 
-        foreach (Spline greater in greaterThanSplines)
-            finalGreaterThanSplines.AddSpline(greater);
+        //get graph splines
+        List<Spline> lessThanSplines = GetSplinesFromEdge(Graph, true);
+        List<Spline> greaterThanSplines = GetSplinesFromEdge(Graph, false);
 
-        if (!DisplayDebug) 
+        //add final splines to correct container
+        foreach (Spline less in GetFinalSplines(inputSplines, lessThanSplines, distanceStep))
+            finalLessThanSplinesContainer.AddSpline(less);
+
+        foreach (Spline greater in GetFinalSplines(inputSplines, greaterThanSplines, distanceStep))
+            finalGreaterThanSplinesContainer.AddSpline(greater);
+
+        //draw debug info
+        if (DisplayDebug)
+        {
+            DisplayNodeDebug(Graph);
+            DisplayEdgeDebug(Graph);
+        }
+        else 
         {
             DestroyImmediate(nodesParent.gameObject);
             DestroyImmediate(edgesParent.gameObject);
         }
-        
+
+        //destory temp obojects
         DestroyImmediate(lessIndexToGreaterIndex.gameObject);
         DestroyImmediate(greaterIndexToLessIndex.gameObject);
     }
@@ -76,13 +90,13 @@ public class GraphGenerator : MonoBehaviour
         //final output slines
         GameObject finalLessThanSplinesGameObject = new GameObject("Final Less Than Splines");
         finalLessThanSplinesGameObject.transform.parent = transform;
-        finalLessThanSplines = finalLessThanSplinesGameObject.AddComponent<SplineContainer>();
-        finalLessThanSplines.RemoveSplineAt(0);
+        finalLessThanSplinesContainer = finalLessThanSplinesGameObject.AddComponent<SplineContainer>();
+        finalLessThanSplinesContainer.RemoveSplineAt(0);
 
         GameObject finalGreaterThanSplinesGameObject = new GameObject("Final Greater Than Splines");
         finalGreaterThanSplinesGameObject.transform.parent = transform;
-        finalGreaterThanSplines = finalGreaterThanSplinesGameObject.AddComponent<SplineContainer>();
-        finalGreaterThanSplines.RemoveSplineAt(0);
+        finalGreaterThanSplinesContainer = finalGreaterThanSplinesGameObject.AddComponent<SplineContainer>();
+        finalGreaterThanSplinesContainer.RemoveSplineAt(0);
     }
 
     #region Helpers
@@ -101,6 +115,7 @@ public class GraphGenerator : MonoBehaviour
     }
     #endregion
 
+    #region Debug
     public void DeleteDebug()
     {
         while (transform.childCount > 0)
@@ -112,45 +127,47 @@ public class GraphGenerator : MonoBehaviour
         }
     }
 
-    private void DisplayGraphSplines(SplineContainer inputSplineContainer)
+    private void DisplayNodeDebug(Graph graph)
     {
-        Graph = new Graph(inputSplineContainer);
-
-        if (DisplayDebug) 
+        foreach (Node node in graph.Nodes)
         {
-            foreach (Node node in Graph.Nodes)
-            {
-                SpawnNode(node);
-            }
-
-            foreach (Edge edge in Graph.Edges)
-            {
-                SpawnEdge(edge);
-            }
+            SpawnNode(node);
         }
-
-        for (int i = 0; i < Graph.Edges.Count; i++)
-        {
-            Edge edge = Graph.Edges[i];
-            Spline spline = new Spline(edge.GetKnots(), false);
-
-            if (i % 2 == 0)
-                lessIndexToGreaterIndex.AddSpline(spline);
-            else
-                greaterIndexToLessIndex.AddSpline(spline);
-        }
-
-        foreach (Spline spline in lessIndexToGreaterIndex.Splines)
-            spline.SetTangentMode(TangentMode.AutoSmooth);
-
-        foreach (Spline spline in greaterIndexToLessIndex.Splines)
-            spline.SetTangentMode(TangentMode.AutoSmooth);
     }
 
-    private List<Spline> GetFinalSplines(SplineContainer inputSplineContainer, SplineContainer graphSplineContainer, float distanceStep)
+    private void DisplayEdgeDebug(Graph graph)
+    {
+        foreach (Edge edge in graph.Edges)
+        {
+            SpawnEdge(edge);
+        }
+    }
+    #endregion
+
+    private List<Spline> GetSplinesFromEdge(Graph graph, bool wantLessThan)
     {
         List<Spline> splines = new List<Spline>();
-        HashSet<Vector3> inputPoints = GetInterpolatedSplineContainerPoints(inputSplineContainer, distanceStep);
+
+        for (int i = 0; i < graph.Edges.Count; i++)
+        {
+            Edge edge = graph.Edges[i];
+            Spline spline = new Spline(edge.GetKnots(), false);
+            spline.SetTangentMode(TangentMode.AutoSmooth);
+
+            if (wantLessThan && i % 2 == 0)
+                splines.Add(spline);
+
+            if (!wantLessThan && i % 2 != 0)
+                splines.Add(spline);
+        }
+
+        return splines;
+    }
+
+    private List<Spline> GetFinalSplines(List<Spline> inputSplines, List<Spline> graphSlines, float distanceStep)
+    {
+        List<Spline> splines = new List<Spline>();
+        HashSet<Vector3> inputPoints = GetInterpolatedSplineContainerPoints(inputSplines, distanceStep);
         GameObject debugFinalDebugHolder = null;
 
         if (DisplayDebug)
@@ -159,7 +176,7 @@ public class GraphGenerator : MonoBehaviour
             debugFinalDebugHolder.transform.parent = transform;
         }
 
-        foreach (Spline spline in graphSplineContainer.Splines)
+        foreach (Spline spline in graphSlines)
         {
             HashSet<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
             HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>();
@@ -269,10 +286,10 @@ public class GraphGenerator : MonoBehaviour
         return points;
     }
 
-    private HashSet<Vector3> GetInterpolatedSplineContainerPoints(SplineContainer splineContainer, float distanceStep)
+    private HashSet<Vector3> GetInterpolatedSplineContainerPoints(List<Spline> splines, float distanceStep)
     {
         HashSet<Vector3> points = new HashSet<Vector3>();
-        foreach (Spline spline in splineContainer.Splines)
+        foreach (Spline spline in splines)
             points.AddRange(GetInterpolatedSplinePoints(spline, distanceStep));
         return points;
     }
