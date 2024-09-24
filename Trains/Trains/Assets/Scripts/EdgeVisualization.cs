@@ -12,7 +12,7 @@ public class EdgeVisualization : MonoBehaviour
 
         //line renderer
         lineRenderer.positionCount = 2;
-        lineRenderer.SetPosition(0, edge.ToNode.Position);
-        lineRenderer.SetPosition(1, edge.FromNode.Position);
+        lineRenderer.SetPosition(0, edge.FromNode.Position);
+        lineRenderer.SetPosition(1, edge.ToNode.Position);
     }
 }

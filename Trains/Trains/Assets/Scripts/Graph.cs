@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Splines;
+using UnityEngine.UIElements;
 
 public class Graph
 {
@@ -10,6 +11,7 @@ public class Graph
     public List<Edge> Edges { get; private set; }
     public int[,] AdjacencyMatrix { get; private set; }
     public Dictionary<Vector3, Node> PositionToNodeMap { get; private set; }
+    public Dictionary<Edge, List<Edge>> EdgeConnectionMap { get; private set; }
 
     public Graph(SplineContainer splineContainer)
     {
@@ -26,6 +28,33 @@ public class Graph
 
         SetDegrees(Nodes, AdjacencyMatrix);
         Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
+
+        Dictionary<Edge, List<Edge>> edgeConnectionMap = CreateEdgeDictionary(Edges);
+        Debug.LogWarning($"{edgeConnectionMap.Keys.Count}");
+        /*
+        foreach (KeyValuePair<Edge, List<Edge>> kvp in edgeConnectionMap)
+        {
+            string output = string.Empty;
+            foreach (Edge edge in kvp.Value)
+            {
+                output += $"{edge.ToString()}, ";
+            }
+            Debug.Log($"{kvp.Key.ToString()} | {output}");
+        }
+        */
+
+        EdgeConnectionMap = RemoveInvalidConnections(edgeConnectionMap);
+
+        Debug.LogWarning($"{edgeConnectionMap.Keys.Count}");
+        foreach (KeyValuePair<Edge, List<Edge>> kvp in EdgeConnectionMap)
+        {
+            string output = string.Empty;
+            foreach (Edge edge in kvp.Value)
+            {
+                output += $"{edge.ToString()}, ";
+            }
+            Debug.Log($"{kvp.Key.ToString()} | {output}");
+        }
     }
 
     #region Nodes
@@ -126,5 +155,68 @@ public class Graph
 
         return output;
     }
+
+    private Dictionary<Edge, List<Edge>> CreateEdgeDictionary(List<Edge> allEdges)
+    {
+        Dictionary<Edge, List<Edge>> dict = new Dictionary<Edge, List<Edge>>();
+        // Build the dictionary of edges
+        foreach (Edge firstEdge in allEdges)
+        {
+            foreach (Edge secondEdge in allEdges)
+            {
+                if (firstEdge.Equals(secondEdge)) continue;
+                if (firstEdge.FromNode.Equals(secondEdge.ToNode) && firstEdge.FromNode.Equals(secondEdge.ToNode)) continue;
+                if (firstEdge.ToNode.Equals(secondEdge.FromNode)) 
+                {
+                    if (!dict.ContainsKey(firstEdge))
+                        dict[firstEdge] = new List<Edge> { secondEdge };
+                    else
+                        dict[firstEdge].Add(secondEdge);
+                }
+            }
+        }
+
+        return dict;
+    }
+
+    private Dictionary<Edge, List<Edge>> RemoveInvalidConnections(Dictionary<Edge, List<Edge>> input)
+    {
+        Dictionary<Edge, List<Edge>> tempDict = new Dictionary<Edge, List<Edge>>();
+
+        foreach (KeyValuePair<Edge, List<Edge>> kvp in input)
+        {
+            if (!kvp.Key.ToNode.IsJunction)
+            {
+                tempDict[kvp.Key] = kvp.Value;
+            }
+            else 
+            {
+                List<Edge> validEdges = new List<Edge>();
+                foreach (Edge edge in kvp.Value)
+                {
+                    float dot = kvp.Key.GetDot(edge);
+                    float angle = kvp.Key.GetAngleDifference(edge);
+
+                    if (dot >= 0 && angle < 60)
+                    {
+                        Debug.Log($"{kvp.Key} | {edge} Dot: {dot}");
+                        Debug.Log($"{kvp.Key} | {edge}  Angle : {angle}");
+                        validEdges.Add(edge);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"{kvp.Key} | {edge} Dot: {dot}");
+                        Debug.LogWarning($"{kvp.Key} | {edge}  Angle : {angle}");
+                    }
+                }
+
+                tempDict[kvp.Key] = validEdges;
+            }
+        }
+
+        return tempDict;
+    }
+
+
     #endregion
 }

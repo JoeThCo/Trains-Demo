@@ -122,7 +122,7 @@ public class GraphGenerator : MonoBehaviour
         nodesParent = new GameObject("Nodes Parent");
         nodesParent.transform.parent = transform;
 
-        edgesParent = new GameObject("Egdes Parent");
+        edgesParent = new GameObject("Edges Parent");
         edgesParent.transform.parent = transform;
 
         //First passs output slines

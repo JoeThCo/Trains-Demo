@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class Junction : MonoBehaviour
 {
+    [SerializeField] private TextMeshProUGUI debugText;
     [SerializeField] private MeshRenderer debugMeshRenderer;
     public Node Node { get; private set; }
 
@@ -14,6 +16,8 @@ public class Junction : MonoBehaviour
 
         if (!Node.IsJunction)
             debugMeshRenderer.enabled = false;
+
+        debugText.SetText($"{Node.Index}");
     }
 
     private void OnTriggerEnter(Collider other)
