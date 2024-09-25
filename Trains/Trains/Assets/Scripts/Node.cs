@@ -25,6 +25,18 @@ public class Node
         IsJunction = Degrees.InDegree > 2 || Degrees.OutDegree > 2;
     }
 
+    public override bool Equals(object obj)
+    {
+        if (obj == null || !(obj is Node)) return false;
+        Node other = (Node)obj;
+        return Index == other.Index;
+    }
+
+    public override int GetHashCode()
+    {
+        return Index.GetHashCode();
+    }
+
     public override string ToString()
     {
         return $"{Index}";

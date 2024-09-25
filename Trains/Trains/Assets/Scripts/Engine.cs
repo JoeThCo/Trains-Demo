@@ -6,7 +6,7 @@ using UnityEngine;
 [RequireComponent(typeof(Car))]
 public class Engine : MonoBehaviour
 {
-    [Range(1, 10)][SerializeField] private float power = 0;
+    [Range(-10, 10)][SerializeField] private float power = 0;
 
     public Car Car { get; private set; }
     public Rigidbody Rigidbody { get; private set; }

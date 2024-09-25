@@ -30,22 +30,8 @@ public class Graph
         Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
 
         Dictionary<Edge, List<Edge>> edgeConnectionMap = CreateEdgeDictionary(Edges);
-        Debug.LogWarning($"{edgeConnectionMap.Keys.Count}");
-        /*
-        foreach (KeyValuePair<Edge, List<Edge>> kvp in edgeConnectionMap)
-        {
-            string output = string.Empty;
-            foreach (Edge edge in kvp.Value)
-            {
-                output += $"{edge.ToString()}, ";
-            }
-            Debug.Log($"{kvp.Key.ToString()} | {output}");
-        }
-        */
-
         EdgeConnectionMap = RemoveInvalidConnections(edgeConnectionMap);
 
-        Debug.LogWarning($"{edgeConnectionMap.Keys.Count}");
         foreach (KeyValuePair<Edge, List<Edge>> kvp in EdgeConnectionMap)
         {
             string output = string.Empty;
@@ -199,14 +185,9 @@ public class Graph
 
                     if (dot >= 0 && angle < 60)
                     {
-                        Debug.Log($"{kvp.Key} | {edge} Dot: {dot}");
-                        Debug.Log($"{kvp.Key} | {edge}  Angle : {angle}");
+                        //Debug.Log($"{kvp.Key} | {edge} Dot: {dot}");
+                        //Debug.Log($"{kvp.Key} | {edge}  Angle : {angle}");
                         validEdges.Add(edge);
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"{kvp.Key} | {edge} Dot: {dot}");
-                        Debug.LogWarning($"{kvp.Key} | {edge}  Angle : {angle}");
                     }
                 }
 

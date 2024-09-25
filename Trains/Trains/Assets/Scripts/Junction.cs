@@ -25,7 +25,19 @@ public class Junction : MonoBehaviour
         Engine engine = other.gameObject.GetComponentInParent<Engine>();
         if (engine)
         {
-            Debug.Log($"Collision with Junction {Node.Index}");
+            Car car = other.gameObject.GetComponentInParent<Car>();
+            if(!car.InJunction)
+                car.OnJunctionEnter();
+        }
+    }
+
+    public void OnTriggerExit(Collider other)
+    {
+        Engine engine = other.gameObject.GetComponentInParent<Engine>();
+        if (engine)
+        {
+            Debug.LogWarning($"Exited Junction {Node.Index}");
+            Car car = other.gameObject.GetComponentInParent<Car>();
         }
     }
 }

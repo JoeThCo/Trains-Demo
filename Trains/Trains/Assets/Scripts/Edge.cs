@@ -10,6 +10,7 @@ public class Edge
     public Node ToNode { get; private set; }
     public float Weight { get; private set; }
     public Vector3 EdgeDireciton { get; private set; }
+    public bool IsLessThanEdge { get; private set; }
 
     public Edge(int index, Node fromNode, Node toNode)
     {
@@ -20,6 +21,7 @@ public class Edge
 
         EdgeDireciton = (FromNode.Position - ToNode.Position).normalized;
         Weight = Vector3.Distance(FromNode.Position, ToNode.Position);
+        IsLessThanEdge = fromNode.Index < toNode.Index;
     }
 
     public float GetDot(Edge otherEdge)

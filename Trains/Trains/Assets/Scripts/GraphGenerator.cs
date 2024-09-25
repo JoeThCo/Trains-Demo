@@ -15,8 +15,8 @@ public class GraphGenerator : MonoBehaviour
     private SplineContainer lessIndexToGreaterIndex;
     private SplineContainer greaterIndexToLessIndex;
 
-    public static SplineContainer LessThanSplinesContainer;
-    public static SplineContainer GreaterThanSplinesContainer;
+    private static SplineContainer GreaterThanSplineContainer;
+    private static SplineContainer LessThanSplineContainer;
 
     private NodeVisualization NodePrefab;
     private EdgeVisualization EdgePrefab;
@@ -31,7 +31,7 @@ public class GraphGenerator : MonoBehaviour
     private GameObject junctionHolder;
     #endregion
 
-    public static Graph Graph;
+    private static Graph Graph;
 
     private void Start()
     {
@@ -77,10 +77,10 @@ public class GraphGenerator : MonoBehaviour
 
         //add final splines to correct container
         foreach (Spline less in GetFinalSplines(inputSplines, lessThanSplines, distanceStep))
-            LessThanSplinesContainer.AddSpline(less);
+            LessThanSplineContainer.AddSpline(less);
 
         foreach (Spline greater in GetFinalSplines(inputSplines, greaterThanSplines, distanceStep))
-            GreaterThanSplinesContainer.AddSpline(greater);
+            GreaterThanSplineContainer.AddSpline(greater);
 
         //draw debug info
         if (DisplayDebug)
@@ -139,13 +139,13 @@ public class GraphGenerator : MonoBehaviour
         //final output slines
         GameObject finalLessThanSplinesGameObject = new GameObject("Final Less Than Splines");
         finalLessThanSplinesGameObject.transform.parent = transform;
-        LessThanSplinesContainer = finalLessThanSplinesGameObject.AddComponent<SplineContainer>();
-        LessThanSplinesContainer.RemoveSplineAt(0);
+        LessThanSplineContainer = finalLessThanSplinesGameObject.AddComponent<SplineContainer>();
+        LessThanSplineContainer.RemoveSplineAt(0);
 
         GameObject finalGreaterThanSplinesGameObject = new GameObject("Final Greater Than Splines");
         finalGreaterThanSplinesGameObject.transform.parent = transform;
-        GreaterThanSplinesContainer = finalGreaterThanSplinesGameObject.AddComponent<SplineContainer>();
-        GreaterThanSplinesContainer.RemoveSplineAt(0);
+        GreaterThanSplineContainer = finalGreaterThanSplinesGameObject.AddComponent<SplineContainer>();
+        GreaterThanSplineContainer.RemoveSplineAt(0);
     }
 
 
@@ -347,5 +347,31 @@ public class GraphGenerator : MonoBehaviour
         return points;
     }
     #endregion
+    #endregion
+
+    #region Static Methods
+    public static Spline GetSpline(Edge edge)
+    {
+        if (edge.IsLessThanEdge)
+        {
+            Debug.Log($"GetSpline LessThan");
+            return LessThanSplineContainer.Splines[edge.Index % LessThanSplineContainer.Splines.Count];
+        }
+        Debug.Log($"GetSpline GreaterThan");
+        return GreaterThanSplineContainer.Splines[edge.Index % GreaterThanSplineContainer.Splines.Count];
+    }
+
+    public static Edge GetEdge(int index)
+    {
+        return Graph.Edges[index];
+    }
+
+    public static Edge GetNextEdge(Edge edge)
+    {
+        List<Edge> result = Graph.EdgeConnectionMap[edge];
+        int rand = Random.Range(0, result.Count - 1);
+        Debug.Log($"GetNextEdge: {result[rand]}");
+        return result[rand];
+    }
     #endregion
 }
