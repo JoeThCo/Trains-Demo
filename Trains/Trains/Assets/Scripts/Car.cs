@@ -66,8 +66,6 @@ public class Car : MonoBehaviour
 
     private void FixedUpdate()
     {
-        float dot = GetDirectionDot();
-
         NativeSpline nativeGraph = new NativeSpline(CurrentSpline);
         SplineUtility.GetNearestPoint(nativeGraph, Rigidbody.position, out float3 nearestPoint, out float t);
         t = Mathf.Clamp01(t);

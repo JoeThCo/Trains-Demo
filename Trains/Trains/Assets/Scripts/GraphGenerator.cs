@@ -357,7 +357,6 @@ public class GraphGenerator : MonoBehaviour
 
     public static Spline GetSpline(Edge edge)
     {
-        Debug.LogWarning($"GetSpline LessThan: {edge.Index} | {edge}");
         return FinalSplineContainer.Splines[edge.Index];
     }
 

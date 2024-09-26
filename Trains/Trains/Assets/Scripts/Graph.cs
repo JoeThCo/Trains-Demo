@@ -151,7 +151,6 @@ public class Graph
 
     public Edge GetInverseEdge(Edge edge)
     {
-        Debug.Log($"{edge.GlobalIndex} vs {edge.InverseIndex}");
         return Edges[edge.InverseIndex];
     }
 
