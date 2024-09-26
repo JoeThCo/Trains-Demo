@@ -30,16 +30,6 @@ public class Graph
         Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
 
         Dictionary<Edge, List<Edge>> edgeConnectionMap = CreateEdgeDictionary(Edges);
-        foreach (KeyValuePair<Edge, List<Edge>> kvp in edgeConnectionMap)
-        {
-            string output = string.Empty;
-            foreach (Edge edge in kvp.Value)
-            {
-                output += $"{edge.ToString()}, ";
-            }
-            Debug.Log($"{kvp.Key.ToString()} | {output}");
-        }
-
         EdgeConnectionMap = RemoveInvalidConnections(edgeConnectionMap);
         foreach (KeyValuePair<Edge, List<Edge>> kvp in EdgeConnectionMap)
         {
