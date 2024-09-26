@@ -13,24 +13,14 @@ public class GraphGeneratorEditor : Editor
         GUILayout.Space(10);
 
         GraphGenerator graphGenerator = target as GraphGenerator;
-        if (GUILayout.Button("Create Final Splines"))
+        if (GUILayout.Button("Create Graph"))
         {
-            graphGenerator.ResetGraphGenerator();
-            graphGenerator.CreateFinalSplines();
+            graphGenerator.CreateGraph();
         }
-
-        if (GUILayout.Button("Create Gameplay"))
-        {
-            graphGenerator.ResetGraphGenerator();
-            graphGenerator.CreateFinalSplines();
-            graphGenerator.CreateGameplay();
-        }
-
-        GUILayout.Space(10);
 
         if (GUILayout.Button("Reset"))
         {
-            graphGenerator.ResetGraphGenerator();
+            graphGenerator.ResetGraph();
         }
     }
 }

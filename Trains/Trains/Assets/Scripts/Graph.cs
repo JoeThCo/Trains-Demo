@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +13,12 @@ public class Graph
     public int[,] AdjacencyMatrix { get; private set; }
     public Dictionary<Vector3, Node> PositionToNodeMap { get; private set; }
     public Dictionary<Edge, List<Edge>> EdgeConnectionMap { get; private set; }
+    public static System.Random Random { get; private set; }
 
     public Graph(SplineContainer splineContainer)
     {
+        Random = new System.Random();
+
         Nodes = new List<Node>();
         Edges = new List<Edge>();
 
@@ -195,14 +199,11 @@ public class Graph
                     float dot = kvp.Key.GetDot(edge);
                     float angle = kvp.Key.GetAngleDifference(edge);
 
+                    //Debug.LogError($"{kvp.Key} vs {edge}");
+                    //Debug.Log($"{kvp.Key} | {edge} Dot: {dot}");
+                    //Debug.Log($"{kvp.Key} | {edge}  Angle : {angle}");
                     if (dot >= 0 && angle < 60)
                         validEdges.Add(edge);
-                    else
-                    {
-                        //Debug.LogError($"{kvp.Key} vs {edge}");
-                        //Debug.Log($"{kvp.Key} | {edge} Dot: {dot}");
-                        //Debug.Log($"{kvp.Key} | {edge}  Angle : {angle}");
-                    }
                 }
 
                 tempDict[kvp.Key] = validEdges;

@@ -45,10 +45,10 @@ public class Car : MonoBehaviour
         else
         {
             CurrentEdge = nextEdge;
+            CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
         }
 
         CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
-
         NativeSpline nativeGraph = new NativeSpline(CurrentSpline);
         SplineUtility.GetNearestPoint(nativeGraph, Rigidbody.position, out float3 nearestPoint, out float t);
         t = Mathf.Clamp01(t);

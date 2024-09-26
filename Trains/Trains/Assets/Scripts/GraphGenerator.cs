@@ -1,50 +1,73 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Splines;
 
 public class GraphGenerator : MonoBehaviour
 {
-    #region Create Final Graph Vars
-    [Header("Create Final Splines")]
-    [SerializeField] private bool DisplayDebug = false;
-    [SerializeField] private bool DisplayDebugNode = false;
-    [SerializeField] private bool DisplayDebugEdge = false;
-    [SerializeField] private bool DisplayFinalSplineSpheres = false;
-    [SerializeField][Range(.1f, 5f)] private float distanceStep = .5f;
+    [SerializeField][Range(1f, 10f)] private float DistanceStep = 5;
+    [SerializeField] private bool DisplayDebugSpheres = false;
+    [SerializeField] private bool DisplayGraphEdges = false;
 
-    private SplineContainer lessIndexToGreaterIndex;
-    private SplineContainer greaterIndexToLessIndex;
-
+    public static SplineContainer InputSplineContainer;
     private static SplineContainer FinalSplineContainer;
 
-    private NodeVisualization NodePrefab;
     private EdgeVisualization EdgePrefab;
 
-    private GameObject nodesParent;
-    private GameObject edgesParent;
-    #endregion
+    private GameObject graphEdgesParent;
+    private GameObject finalSplinesSphereParent;
 
-    #region CreateGameplay Vars
     private Junction junctionPrefab;
-
     private GameObject junctionHolder;
-    #endregion
 
     private static Graph Graph;
 
     private void Start()
     {
-        ResetGraphGenerator();
+        CreateGraph();
+    }
 
-        CreateFinalSplines();
+    public void CreateGraph()
+    {
+        ResetGraph();
+
+        InputSplineContainer = GetComponent<SplineContainer>();
+        Graph = new Graph(InputSplineContainer);
+
+        List<Spline> splines = GetSplinesFromEdge(Graph);
+
+        GameObject finalSplinesParent = new GameObject("Final Splines");
+        finalSplinesParent.transform.parent = transform;
+        FinalSplineContainer = finalSplinesParent.AddComponent<SplineContainer>();
+        FinalSplineContainer.RemoveSplineAt(0);
+
+        graphEdgesParent = new GameObject("Graph Edges Parent");
+        graphEdgesParent.transform.parent = transform;
+
+        finalSplinesSphereParent = new GameObject("Final Splines Sphere Parent");
+        finalSplinesSphereParent.transform.parent = transform;
+
+        List<Spline> finalSplines = GetFinalSplines(splines, DistanceStep);
+        foreach (Spline spline in finalSplines)
+            FinalSplineContainer.AddSpline(spline);
+
+        if (DisplayGraphEdges)
+            DebugEdgeInfo();
+        else
+            DestroyImmediate(graphEdgesParent.gameObject);
+
+        if (DisplayDebugSpheres)
+            DebugFinalSplineInfo(finalSplines);
+        else
+            DestroyImmediate(finalSplinesSphereParent.gameObject);
+
         CreateGameplay();
     }
 
-    public void CreateGameplay()
+    private void CreateGameplay()
     {
         junctionHolder = new GameObject("Junction Holder");
         junctionHolder.transform.parent = transform;
@@ -57,57 +80,7 @@ public class GraphGenerator : MonoBehaviour
         }
     }
 
-    public void CreateFinalSplines()
-    {
-        //get input
-        SplineContainer inputSplineContainer = GetComponent<SplineContainer>();
-
-        //load prefabs
-        NodePrefab = Resources.Load<NodeVisualization>("Node");
-        EdgePrefab = Resources.Load<EdgeVisualization>("Edge");
-
-        CreateObjects();
-
-        //get edge/node info
-        Graph = new Graph(inputSplineContainer);
-
-        //get input splines
-        List<Spline> inputSplines = inputSplineContainer.Splines.ToList();
-
-        //get graph splines
-        List<Spline> splines = GetSplinesFromEdge(Graph);
-
-        //add final splines to correct container
-        foreach (Spline spline in GetFinalSplines(inputSplines, splines, distanceStep))
-            FinalSplineContainer.AddSpline(spline);
-
-        //draw debug info
-        if (DisplayDebug)
-        {
-            if (DisplayDebugNode)
-                DisplayNodeDebug(Graph);
-            else
-                DestroyImmediate(nodesParent.gameObject);
-
-            if (DisplayDebugEdge)
-                DisplayEdgeDebug(Graph);
-            else
-                DestroyImmediate(edgesParent.gameObject);
-        }
-
-        //destory temp obojects
-        DestroyImmediate(lessIndexToGreaterIndex.gameObject);
-        DestroyImmediate(greaterIndexToLessIndex.gameObject);
-    }
-
-    public void ResetGraphGenerator()
-    {
-        Graph = null;
-        RemoveChildren();
-        Debug.ClearDeveloperConsole();
-    }
-
-    #region CreateGameplay
+    #region Gameplay
     private Junction SpawnJunction(Node node)
     {
         Junction newJunction = Instantiate(junctionPrefab, node.Position, Quaternion.identity, junctionHolder.transform).GetComponent<Junction>();
@@ -116,81 +89,7 @@ public class GraphGenerator : MonoBehaviour
     }
     #endregion
 
-    #region Create Final Spline Methods
-    #region Helpers
-    void CreateObjects()
-    {
-        //debug info
-        nodesParent = new GameObject("Nodes Parent");
-        nodesParent.transform.parent = transform;
-
-        edgesParent = new GameObject("Edges Parent");
-        edgesParent.transform.parent = transform;
-
-        //First passs output slines
-        GameObject FromToToGameObject = new GameObject("From -> To Splines");
-        FromToToGameObject.transform.parent = transform;
-        lessIndexToGreaterIndex = FromToToGameObject.AddComponent<SplineContainer>();
-        lessIndexToGreaterIndex.RemoveSplineAt(0);
-
-        GameObject ToToFromGameObject = new GameObject("To -> From Splines");
-        ToToFromGameObject.transform.parent = transform;
-        greaterIndexToLessIndex = ToToFromGameObject.AddComponent<SplineContainer>();
-        greaterIndexToLessIndex.RemoveSplineAt(0);
-
-        //final output slines
-        GameObject finalLessThanSplinesGameObject = new GameObject("Final Splines");
-        finalLessThanSplinesGameObject.transform.parent = transform;
-        FinalSplineContainer = finalLessThanSplinesGameObject.AddComponent<SplineContainer>();
-        FinalSplineContainer.RemoveSplineAt(0);
-    }
-
-
-    private NodeVisualization SpawnNode(Node node)
-    {
-        NodeVisualization nodeVisulization = Instantiate(NodePrefab, node.Position, Quaternion.identity, nodesParent.transform).GetComponent<NodeVisualization>();
-        nodeVisulization.NodeVisualizationInit(node);
-        return nodeVisulization;
-    }
-
-    private EdgeVisualization SpawnEdge(Edge edge)
-    {
-        EdgeVisualization edgeVisualization = Instantiate(EdgePrefab, edge.GetHalfWay(), Quaternion.identity, edgesParent.transform).GetComponent<EdgeVisualization>();
-        edgeVisualization.EdgeVisualizationInit(edge);
-        return edgeVisualization;
-    }
-    #endregion
-
-    #region Debug
-    public void RemoveChildren()
-    {
-        while (transform.childCount > 0)
-        {
-            foreach (Transform child in transform)
-            {
-                DestroyImmediate(child.gameObject);
-            }
-        }
-    }
-
-    private void DisplayNodeDebug(Graph graph)
-    {
-        foreach (Node node in graph.Nodes)
-        {
-            SpawnNode(node);
-        }
-    }
-
-    private void DisplayEdgeDebug(Graph graph)
-    {
-        foreach (Edge edge in graph.Edges)
-        {
-            SpawnEdge(edge);
-        }
-    }
-    #endregion
-
-    #region Spline 
+    #region Splines
     private List<Spline> GetSplinesFromEdge(Graph graph)
     {
         List<Spline> splines = new List<Spline>();
@@ -207,74 +106,33 @@ public class GraphGenerator : MonoBehaviour
         return splines;
     }
 
-    private List<Spline> GetFinalSplines(List<Spline> inputSplines, List<Spline> graphSlines, float distanceStep)
+    private List<Vector3> GetInterpolatedSplinePoints(Spline spline, float distanceStep)
     {
-        List<Spline> splines = new List<Spline>();
-        HashSet<Vector3> inputPoints = GetInterpolatedSplineContainerPoints(inputSplines, distanceStep);
-        GameObject debugFinalDebugHolder = null;
+        List<Vector3> points = new List<Vector3>();
+        float totalLength = spline.GetLength();
+        float currentLength = 0f;
+        Vector3 position = spline.EvaluatePosition(0);
+        points.Add(position);
 
-        if (DisplayDebug)
+        while (currentLength < totalLength)
         {
-            debugFinalDebugHolder = new GameObject("Spline Debug Holder");
-            debugFinalDebugHolder.transform.parent = transform;
+            float t = currentLength / totalLength;
+            position = spline.EvaluatePosition(t);
+
+            if (!points.Contains(position)) points.Add(position);
+            currentLength += distanceStep;
         }
+        points.Add(spline.EvaluatePosition(1));
 
-        foreach (Spline spline in graphSlines)
-        {
-            List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
-            HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>();
-
-            foreach (Vector3 point in splinePoints)
-            {
-                Vector3 nearestInputPoint = FindClosestPoint(point, inputPoints);
-                Vector3 averagePoint = Vector3.Lerp(point, nearestInputPoint, 0.5f);
-                outputSplinePoints.Add(averagePoint);
-            }
-
-            HashSet<Vector3> outputPoints = MakeEqualDistanced(outputSplinePoints.ToArray(), distanceStep);
-            Spline newSpline = new Spline();
-
-            GameObject debugSplineHolder = null;
-            if (DisplayDebug && DisplayFinalSplineSpheres)
-            {
-                foreach (Vector3 point in outputPoints)
-                {
-                    debugSplineHolder = new GameObject("Final Debug Holder");
-                    debugSplineHolder.transform.parent = debugFinalDebugHolder.transform;
-
-                    if (!DisplayDebug || !DisplayFinalSplineSpheres) continue;
-                    GameObject debugPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    debugPoint.transform.position = point;
-                    debugPoint.transform.parent = debugSplineHolder.transform;
-                    DestroyImmediate(debugPoint.GetComponent<SphereCollider>());
-                }
-            }
-
-            foreach (Vector3 point in outputPoints)
-                newSpline.Add(point);
-
-            splines.Add(newSpline);
-        }
-
-        return splines;
+        return points;
     }
 
-    private Vector3 FindClosestPoint(Vector3 inputPoint, HashSet<Vector3> points)
+    private HashSet<Vector3> GetInterpolatedSplineContainerPoints(List<Spline> splines, float distanceStep)
     {
-        Vector3 closestPoint = Vector3.zero;
-        float closestDistance = Mathf.Infinity;
-
-        foreach (Vector3 point in points)
-        {
-            float distance = Vector3.Distance(inputPoint, point);
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestPoint = point;
-            }
-        }
-
-        return closestPoint;
+        HashSet<Vector3> points = new HashSet<Vector3>();
+        foreach (Spline spline in splines)
+            points.AddRange(GetInterpolatedSplinePoints(spline, distanceStep));
+        return points;
     }
 
     private HashSet<Vector3> MakeEqualDistanced(Vector3[] originalPoints, float distanceStep)
@@ -312,52 +170,143 @@ public class GraphGenerator : MonoBehaviour
         return equalDistancePoints;
     }
 
-    private List<Vector3> GetInterpolatedSplinePoints(Spline spline, float distanceStep)
+    public static Spline GetNearestSpline(Vector3 position, SplineContainer splineContainer)
     {
-        List<Vector3> points = new List<Vector3>();
-        float totalLength = spline.GetLength();
-        float currentLength = 0f;
-        Vector3 position = spline.EvaluatePosition(0);
-        points.Add(position);
+        float minDistance = float.MaxValue;
+        Spline nearestSpline = null;
 
-        while (currentLength < totalLength)
+        foreach (Spline spline in splineContainer.Splines)
         {
-            float t = currentLength / totalLength;
-            position = spline.EvaluatePosition(t);
+            float3 closestPointOnSpline;
+            float t;
 
-            if (!points.Contains(position)) points.Add(position);
-            currentLength += distanceStep;
+            // Get the closest point on the spline to the given position
+            SplineUtility.GetNearestPoint(spline, position, out closestPointOnSpline, out t);
+
+            // Calculate the distance between the given position and the closest point on the spline
+            float distance = Vector3.Distance(position, closestPointOnSpline);
+
+            // If this distance is less than the current minimum, update the nearest spline
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                nearestSpline = spline;
+            }
         }
-        points.Add(spline.EvaluatePosition(1));
 
-        return points;
+        return nearestSpline;
     }
 
-    private HashSet<Vector3> GetInterpolatedSplineContainerPoints(List<Spline> splines, float distanceStep)
+    private List<Spline> GetFinalSplines(List<Spline> graphSplines, float distanceStep)
     {
-        HashSet<Vector3> points = new HashSet<Vector3>();
-        foreach (Spline spline in splines)
-            points.AddRange(GetInterpolatedSplinePoints(spline, distanceStep));
-        return points;
+        List<Spline> splines = new List<Spline>();
+        //do I need to do this twice?
+        HashSet<Vector3> inputPoints = GetInterpolatedSplineContainerPoints(graphSplines, distanceStep);
+
+        foreach (Spline spline in graphSplines)
+        {
+            //do I need to do this twice?
+            List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
+            HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>();
+
+            foreach (Vector3 point in splinePoints)
+            {
+                NativeSpline nativeSpline = new NativeSpline(GetNearestSpline(point, InputSplineContainer));
+                SplineUtility.GetNearestPoint(nativeSpline, point, out float3 nearest, out float t);
+                outputSplinePoints.Add(nearest);
+            }
+
+            HashSet<Vector3> outputPoints = MakeEqualDistanced(outputSplinePoints.ToArray(), distanceStep);
+            Spline newSpline = new Spline();
+
+            foreach (Vector3 point in outputPoints)
+                newSpline.Add(point);
+
+            splines.Add(newSpline);
+        }
+
+        return splines;
     }
+
     #endregion
+
+    #region Debug
+    public void ResetGraph()
+    {
+        Graph = null;
+        RemoveChildren();
+        Debug.ClearDeveloperConsole();
+    }
+
+    private void DebugEdgeInfo()
+    {
+        //load prefabs
+        EdgePrefab = Resources.Load<EdgeVisualization>("Edge");
+
+        //draw debug info
+        DisplayEdgeDebug(Graph);
+    }
+
+    private void DebugFinalSplineInfo(List<Spline> finalSplines)
+    {
+        foreach (Spline spline in finalSplines)
+        {
+            GameObject currentSplineDebugHolder = null;
+            currentSplineDebugHolder = new GameObject("Current Spline Holder");
+            currentSplineDebugHolder.transform.parent = finalSplinesSphereParent.transform;
+
+            foreach (BezierKnot knot in spline.Knots)
+            {
+                GameObject debugPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                debugPoint.name = "Final Debug Holder";
+                debugPoint.transform.position = knot.Position;
+                DestroyImmediate(debugPoint.GetComponent<SphereCollider>());
+                debugPoint.transform.parent = currentSplineDebugHolder.transform;
+            }
+        }
+    }
+
+    private EdgeVisualization SpawnEdge(Edge edge)
+    {
+        EdgeVisualization edgeVisualization = Instantiate(EdgePrefab, edge.GetHalfWay(), Quaternion.identity, graphEdgesParent.transform).GetComponent<EdgeVisualization>();
+        edgeVisualization.EdgeVisualizationInit(edge);
+        return edgeVisualization;
+    }
+
+    public void RemoveChildren()
+    {
+        while (transform.childCount > 0)
+        {
+            foreach (Transform child in transform)
+            {
+                DestroyImmediate(child.gameObject);
+            }
+        }
+    }
+
+    private void DisplayEdgeDebug(Graph graph)
+    {
+        foreach (Edge edge in graph.Edges)
+        {
+            SpawnEdge(edge);
+        }
+    }
     #endregion
 
     #region Static Methods
-
-    public static Edge GetInverseEdge(Edge edge) 
+    public static Edge GetInverseEdge(Edge edge)
     {
         return Graph.GetInverseEdge(edge);
     }
 
-    public static bool IsConnected(Edge a, Edge b) 
+    public static bool IsConnected(Edge a, Edge b)
     {
         return Graph.IsConnected(a, b);
     }
 
     public static Spline GetSpline(Edge edge)
     {
-        return FinalSplineContainer.Splines[edge.Index];
+        return FinalSplineContainer.Splines[edge.GlobalIndex];
     }
 
     public static Edge GetEdge(int index)
@@ -367,10 +316,14 @@ public class GraphGenerator : MonoBehaviour
 
     public static Edge GetNextEdge(Edge edge)
     {
+        Debug.Log($"In {edge}");
         Graph.EdgeConnectionMap.TryGetValue(edge, out List<Edge> result);
         if (result == null) return null;
 
-        Edge outputEdge = result[Random.Range(0, result.Count - 1)];
+        int randomIndex = Graph.Random.Next(0, result.Count);
+        //Debug.Log($"Index {randomIndex} Length {result.Count}");
+        Edge outputEdge = result[randomIndex];
+        Debug.Log($"Out {edge}");
         return outputEdge;
     }
     #endregion
