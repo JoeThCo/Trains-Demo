@@ -30,8 +30,17 @@ public class Graph
         Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
 
         Dictionary<Edge, List<Edge>> edgeConnectionMap = CreateEdgeDictionary(Edges);
-        EdgeConnectionMap = RemoveInvalidConnections(edgeConnectionMap);
+        foreach (KeyValuePair<Edge, List<Edge>> kvp in edgeConnectionMap)
+        {
+            string output = string.Empty;
+            foreach (Edge edge in kvp.Value)
+            {
+                output += $"{edge.ToString()}, ";
+            }
+            Debug.Log($"{kvp.Key.ToString()} | {output}");
+        }
 
+        EdgeConnectionMap = RemoveInvalidConnections(edgeConnectionMap);
         foreach (KeyValuePair<Edge, List<Edge>> kvp in EdgeConnectionMap)
         {
             string output = string.Empty;
@@ -96,6 +105,7 @@ public class Graph
     #endregion
 
     #region Edge
+
     private List<Edge> CreateEdges(SplineContainer splineContainer)
     {
         List<Edge> output = new List<Edge>();
@@ -103,17 +113,18 @@ public class Graph
         foreach (Spline spline in splineContainer.Splines)
         {
             BezierKnot[] knots = spline.Knots.ToArray();
+            int globalIndex = 0;
 
             for (int i = 0; i < knots.Length - 1; i++)
             {
                 Vector3 posA = knots[i].Position;
                 Vector3 posB = knots[i + 1].Position;
 
-                Node nodeA = PositionToNodeMap[posA];
-                Node nodeB = PositionToNodeMap[posB];
+                Node lessThanNode = PositionToNodeMap[posA];
+                Node greaterThanNode = PositionToNodeMap[posB];
 
-                output.Add(new Edge(output.Count, nodeA, nodeB));
-                output.Add(new Edge(output.Count, nodeB, nodeA));
+                output.Add(new Edge(i, globalIndex++, lessThanNode, greaterThanNode));
+                output.Add(new Edge(i, globalIndex++, greaterThanNode, lessThanNode));
             }
 
             if (spline.Closed)
@@ -121,11 +132,12 @@ public class Graph
                 Vector3 posA = knots[knots.Length - 1].Position;
                 Vector3 posB = knots[0].Position;
 
-                Node nodeA = PositionToNodeMap[posA];
-                Node nodeB = PositionToNodeMap[posB];
+                Node lessThanNode = PositionToNodeMap[posA];
+                Node greaterThanNode = PositionToNodeMap[posB];
 
-                output.Add(new Edge(output.Count, nodeA, nodeB));
-                output.Add(new Edge(output.Count, nodeB, nodeA));
+                int currentOutputCount = output.Count;
+                output.Add(new Edge(currentOutputCount, globalIndex++, lessThanNode, greaterThanNode));
+                output.Add(new Edge(currentOutputCount, globalIndex++, greaterThanNode, lessThanNode));
             }
         }
 
@@ -142,26 +154,37 @@ public class Graph
         return output;
     }
 
+    public bool IsConnected(Edge a, Edge b)
+    {
+        return a.ToNode.Equals(b.FromNode);
+    }
+
+    public Edge GetInverseEdge(Edge edge)
+    {
+        Debug.Log($"{edge.GlobalIndex} vs {edge.InverseIndex}");
+        return Edges[edge.InverseIndex];
+    }
+
     private Dictionary<Edge, List<Edge>> CreateEdgeDictionary(List<Edge> allEdges)
     {
         Dictionary<Edge, List<Edge>> dict = new Dictionary<Edge, List<Edge>>();
-        // Build the dictionary of edges
+
         foreach (Edge firstEdge in allEdges)
         {
             foreach (Edge secondEdge in allEdges)
             {
                 if (firstEdge.Equals(secondEdge)) continue;
-                if (firstEdge.FromNode.Equals(secondEdge.ToNode) && firstEdge.FromNode.Equals(secondEdge.ToNode)) continue;
-                if (firstEdge.ToNode.Equals(secondEdge.FromNode)) 
+                if (firstEdge.FromNode.Equals(secondEdge.ToNode)) continue;
+
+                if (firstEdge.ToNode.Equals(secondEdge.FromNode))
                 {
-                    if (!dict.ContainsKey(firstEdge))
-                        dict[firstEdge] = new List<Edge> { secondEdge };
-                    else
+                    if (dict.ContainsKey(firstEdge))
                         dict[firstEdge].Add(secondEdge);
+                    else
+                        dict[firstEdge] = new List<Edge> { secondEdge };
                 }
             }
         }
-
         return dict;
     }
 
@@ -175,7 +198,7 @@ public class Graph
             {
                 tempDict[kvp.Key] = kvp.Value;
             }
-            else 
+            else
             {
                 List<Edge> validEdges = new List<Edge>();
                 foreach (Edge edge in kvp.Value)
@@ -184,10 +207,12 @@ public class Graph
                     float angle = kvp.Key.GetAngleDifference(edge);
 
                     if (dot >= 0 && angle < 60)
+                        validEdges.Add(edge);
+                    else
                     {
+                        //Debug.LogError($"{kvp.Key} vs {edge}");
                         //Debug.Log($"{kvp.Key} | {edge} Dot: {dot}");
                         //Debug.Log($"{kvp.Key} | {edge}  Angle : {angle}");
-                        validEdges.Add(edge);
                     }
                 }
 
@@ -197,7 +222,6 @@ public class Graph
 
         return tempDict;
     }
-
 
     #endregion
 }

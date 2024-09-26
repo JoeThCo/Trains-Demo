@@ -26,8 +26,7 @@ public class Junction : MonoBehaviour
         if (engine)
         {
             Car car = other.gameObject.GetComponentInParent<Car>();
-            if(!car.InJunction)
-                car.OnJunctionEnter();
+            car.OnJunctionEnter();
         }
     }
 

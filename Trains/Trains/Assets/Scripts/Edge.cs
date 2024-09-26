@@ -6,22 +6,27 @@ using UnityEngine.Splines;
 public class Edge
 {
     public int Index { get; private set; }
+    public int GlobalIndex { get; private set; }
+    public int InverseIndex { get; private set; }
     public Node FromNode { get; private set; }
     public Node ToNode { get; private set; }
     public float Weight { get; private set; }
     public Vector3 EdgeDireciton { get; private set; }
     public bool IsLessThanEdge { get; private set; }
 
-    public Edge(int index, Node fromNode, Node toNode)
+    public Edge(int index, int globalIndex, Node fromNode, Node toNode)
     {
         Index = index;
+        GlobalIndex = globalIndex;
 
         FromNode = fromNode;
         ToNode = toNode;
 
         EdgeDireciton = (FromNode.Position - ToNode.Position).normalized;
         Weight = Vector3.Distance(FromNode.Position, ToNode.Position);
+
         IsLessThanEdge = fromNode.Index < toNode.Index;
+        InverseIndex = IsLessThanEdge ? GlobalIndex + 1 : GlobalIndex - 1;
     }
 
     public float GetDot(Edge otherEdge)
@@ -39,6 +44,16 @@ public class Edge
         return new List<BezierKnot> { FromNode.Knot, ToNode.Knot };
     }
 
+    public string GetKnotsToString() 
+    {
+        string output = string.Empty;
+        foreach (BezierKnot knot in GetKnots()) 
+        {
+            output += knot.Position.ToString();
+        }
+        return output;
+    }
+
     public Vector3 GetHalfWay()
     {
         return Vector3.Lerp(FromNode.Position, ToNode.Position, .5f);
@@ -53,7 +68,7 @@ public class Edge
     {
         if (obj == null || !(obj is Edge)) return false;
         Edge other = obj as Edge;
-        return Index == other.Index;
+        return GlobalIndex == other.GlobalIndex;
     }
 
     public override int GetHashCode()

@@ -11,9 +11,7 @@ public class Car : MonoBehaviour
     public Train Train { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
     public Edge CurrentEdge { get; private set; }
-    public bool InJunction { get; private set; }
-
-    private Spline CurrentSpline;
+    private Spline CurrentSpline { get; set; }
 
     private void Start()
     {
@@ -34,34 +32,46 @@ public class Car : MonoBehaviour
 
     public void OnJunctionEnter()
     {
-        Debug.Log("Junction Entered!");
-        InJunction = true;
-        CurrentEdge = GraphGenerator.GetNextEdge(CurrentEdge);
-        CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
+        Edge nextEdge = GraphGenerator.GetNextEdge(CurrentEdge);
+        if (nextEdge == null) return;
 
-        Vector3 newPosition = CurrentSpline.EvaluatePosition(0f);
-        if (Vector3.Distance(newPosition, CurrentEdge.FromNode.Position) < Vector3.Distance(newPosition, CurrentEdge.ToNode.Position)) 
+        if (!GraphGenerator.IsConnected(CurrentEdge, nextEdge))
         {
-            newPosition = CurrentSpline.EvaluatePosition(1f);
+            CurrentEdge = GraphGenerator.GetInverseEdge(CurrentEdge);
+            CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
+            Rigidbody.velocity = Vector3.zero;
+            return;
+        }
+        else
+        {
+            CurrentEdge = nextEdge;
         }
 
-        Rigidbody.position = newPosition;
+        CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
 
-        // Reset the car's rotation to match the new spline's direction
-        Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(0f));
-        Vector3 up = CurrentSpline.EvaluateUpVector(0f);
+        NativeSpline nativeGraph = new NativeSpline(CurrentSpline);
+        SplineUtility.GetNearestPoint(nativeGraph, Rigidbody.position, out float3 nearestPoint, out float t);
+        t = Mathf.Clamp01(t);
+
+        // Set to nearest point
+        Rigidbody.position = (Vector3)nearestPoint;
+
+        // Get the new directions
+        Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
+        Vector3 up = nativeGraph.EvaluateUpVector(t);
+
+        // Set the new rotation
         transform.rotation = Quaternion.LookRotation(forward, up);
-
-        // Optionally reset the car's velocity
-        Rigidbody.velocity = Vector3.zero;
     }
 
     private void FixedUpdate()
     {
+        float dot = GetDirectionDot();
+
         NativeSpline nativeGraph = new NativeSpline(CurrentSpline);
         SplineUtility.GetNearestPoint(nativeGraph, Rigidbody.position, out float3 nearestPoint, out float t);
         t = Mathf.Clamp01(t);
-        Debug.Log(t);
+        //Debug.Log(t);
 
         // Set to nearest point
         Rigidbody.position = (Vector3)nearestPoint;

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -10,6 +11,9 @@ public class GraphGenerator : MonoBehaviour
     #region Create Final Graph Vars
     [Header("Create Final Splines")]
     [SerializeField] private bool DisplayDebug = false;
+    [SerializeField] private bool DisplayDebugNode = false;
+    [SerializeField] private bool DisplayDebugEdge = false;
+    [SerializeField] private bool DisplayFinalSplineSpheres = false;
     [SerializeField][Range(.1f, 5f)] private float distanceStep = .5f;
 
     private SplineContainer lessIndexToGreaterIndex;
@@ -85,13 +89,15 @@ public class GraphGenerator : MonoBehaviour
         //draw debug info
         if (DisplayDebug)
         {
-            DisplayNodeDebug(Graph);
-            DisplayEdgeDebug(Graph);
-        }
-        else
-        {
-            DestroyImmediate(nodesParent.gameObject);
-            DestroyImmediate(edgesParent.gameObject);
+            if (DisplayDebugNode)
+                DisplayNodeDebug(Graph);
+            else
+                DestroyImmediate(nodesParent.gameObject);
+
+            if (DisplayDebugEdge)
+                DisplayEdgeDebug(Graph);
+            else
+                DestroyImmediate(edgesParent.gameObject);
         }
 
         //destory temp obojects
@@ -103,6 +109,7 @@ public class GraphGenerator : MonoBehaviour
     {
         Graph = null;
         RemoveChildren();
+        Debug.ClearDeveloperConsole();
     }
 
     #region CreateGameplay
@@ -242,22 +249,23 @@ public class GraphGenerator : MonoBehaviour
             Spline newSpline = new Spline();
 
             GameObject debugSplineHolder = null;
-            if (DisplayDebug)
+            if (DisplayDebug && DisplayFinalSplineSpheres)
             {
-                debugSplineHolder = new GameObject("Final Debug Holder");
-                debugSplineHolder.transform.parent = debugFinalDebugHolder.transform;
+                foreach (Vector3 point in outputPoints)
+                {
+                    debugSplineHolder = new GameObject("Final Debug Holder");
+                    debugSplineHolder.transform.parent = debugFinalDebugHolder.transform;
+
+                    if (!DisplayDebug || !DisplayFinalSplineSpheres) continue;
+                    GameObject debugPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    debugPoint.transform.position = point;
+                    debugPoint.transform.parent = debugSplineHolder.transform;
+                    DestroyImmediate(debugPoint.GetComponent<SphereCollider>());
+                }
             }
 
             foreach (Vector3 point in outputPoints)
-            {
                 newSpline.Add(point);
-
-                if (!DisplayDebug) continue;
-                GameObject debugPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                debugPoint.transform.position = point;
-                debugPoint.transform.parent = debugSplineHolder.transform;
-                DestroyImmediate(debugPoint.GetComponent<SphereCollider>());
-            }
 
             splines.Add(newSpline);
         }
@@ -350,15 +358,26 @@ public class GraphGenerator : MonoBehaviour
     #endregion
 
     #region Static Methods
+
+    public static Edge GetInverseEdge(Edge edge) 
+    {
+        return Graph.GetInverseEdge(edge);
+    }
+
+    public static bool IsConnected(Edge a, Edge b) 
+    {
+        return Graph.IsConnected(a, b);
+    }
+
     public static Spline GetSpline(Edge edge)
     {
         if (edge.IsLessThanEdge)
         {
-            Debug.Log($"GetSpline LessThan");
-            return LessThanSplineContainer.Splines[edge.Index % LessThanSplineContainer.Splines.Count];
+            Debug.LogWarning($"GetSpline LessThan: {edge.Index} | {edge}");
+            return LessThanSplineContainer.Splines[edge.Index];
         }
-        Debug.Log($"GetSpline GreaterThan");
-        return GreaterThanSplineContainer.Splines[edge.Index % GreaterThanSplineContainer.Splines.Count];
+        Debug.LogWarning($"GetSpline GreaterThan: {edge.Index} | {edge}");
+        return GreaterThanSplineContainer.Splines[edge.Index];
     }
 
     public static Edge GetEdge(int index)
@@ -368,10 +387,11 @@ public class GraphGenerator : MonoBehaviour
 
     public static Edge GetNextEdge(Edge edge)
     {
-        List<Edge> result = Graph.EdgeConnectionMap[edge];
-        int rand = Random.Range(0, result.Count - 1);
-        Debug.Log($"GetNextEdge: {result[rand]}");
-        return result[rand];
+        Graph.EdgeConnectionMap.TryGetValue(edge, out List<Edge> result);
+        if (result == null) return null;
+
+        Edge outputEdge = result[Random.Range(0, result.Count - 1)];
+        return outputEdge;
     }
     #endregion
 }
