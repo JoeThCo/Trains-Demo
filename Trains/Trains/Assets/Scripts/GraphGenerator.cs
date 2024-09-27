@@ -207,16 +207,20 @@ public class GraphGenerator : MonoBehaviour
         {
             //do I need to do this twice?
             List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
-            HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>();
+            HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>() { splinePoints[0] };
 
             foreach (Vector3 point in splinePoints)
             {
+                //i feel like this is bad lol
                 NativeSpline nativeSpline = new NativeSpline(GetNearestSpline(point, InputSplineContainer));
                 SplineUtility.GetNearestPoint(nativeSpline, point, out float3 nearest, out float t);
                 outputSplinePoints.Add(nearest);
             }
+            outputSplinePoints.Add(splinePoints[splinePoints.Count - 1]);
 
             HashSet<Vector3> outputPoints = MakeEqualDistanced(outputSplinePoints.ToArray(), distanceStep);
+            outputPoints.Add(splinePoints[0]);
+
             Spline newSpline = new Spline();
 
             foreach (Vector3 point in outputPoints)
@@ -294,11 +298,6 @@ public class GraphGenerator : MonoBehaviour
     #endregion
 
     #region Static Methods
-    public static Edge GetInverseEdge(Edge edge)
-    {
-        return Graph.GetInverseEdge(edge);
-    }
-
     public static bool IsConnected(Edge a, Edge b)
     {
         return Graph.IsConnected(a, b);
@@ -306,7 +305,7 @@ public class GraphGenerator : MonoBehaviour
 
     public static Spline GetSpline(Edge edge)
     {
-        return FinalSplineContainer.Splines[edge.GlobalIndex];
+        return FinalSplineContainer.Splines[edge.Index];
     }
 
     public static Edge GetEdge(int index)
@@ -316,14 +315,15 @@ public class GraphGenerator : MonoBehaviour
 
     public static Edge GetNextEdge(Edge edge)
     {
-        Debug.Log($"In {edge}");
+        Debug.LogWarning($"In {edge}");
         Graph.EdgeConnectionMap.TryGetValue(edge, out List<Edge> result);
         if (result == null) return null;
+        foreach (Edge e in result) 
+            Debug.LogError(e);
 
         int randomIndex = Graph.Random.Next(0, result.Count);
-        //Debug.Log($"Index {randomIndex} Length {result.Count}");
         Edge outputEdge = result[randomIndex];
-        Debug.Log($"Out {edge}");
+        Debug.LogWarning($"Out {outputEdge}");
         return outputEdge;
     }
     #endregion

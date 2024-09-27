@@ -13,6 +13,10 @@ public class Car : MonoBehaviour
     public Edge CurrentEdge { get; private set; }
     private Spline CurrentSpline { get; set; }
 
+    public bool IsSwitching { get; set; }
+
+    private const float JUNCTION_DISTANCE = .05f;
+
     private void Start()
     {
         Rigidbody = GetComponent<Rigidbody>();
@@ -28,40 +32,6 @@ public class Car : MonoBehaviour
     public void SetTrain(Train train)
     {
         Train = train;
-    }
-
-    public void OnJunctionEnter()
-    {
-        Edge nextEdge = GraphGenerator.GetNextEdge(CurrentEdge);
-        if (nextEdge == null) return;
-
-        if (!GraphGenerator.IsConnected(CurrentEdge, nextEdge))
-        {
-            CurrentEdge = GraphGenerator.GetInverseEdge(CurrentEdge);
-            CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
-            Rigidbody.velocity = Vector3.zero;
-            return;
-        }
-        else
-        {
-            CurrentEdge = nextEdge;
-            CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
-        }
-
-        CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
-        NativeSpline nativeGraph = new NativeSpline(CurrentSpline);
-        SplineUtility.GetNearestPoint(nativeGraph, Rigidbody.position, out float3 nearestPoint, out float t);
-        t = Mathf.Clamp01(t);
-
-        // Set to nearest point
-        Rigidbody.position = (Vector3)nearestPoint;
-
-        // Get the new directions
-        Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
-        Vector3 up = nativeGraph.EvaluateUpVector(t);
-
-        // Set the new rotation
-        transform.rotation = Quaternion.LookRotation(forward, up);
     }
 
     private void FixedUpdate()
@@ -89,6 +59,29 @@ public class Car : MonoBehaviour
         }
 
         Rigidbody.velocity = Rigidbody.velocity.magnitude * engineForward;
+
+        if (t <= JUNCTION_DISTANCE || t >= 1 - JUNCTION_DISTANCE)
+        {
+            if (IsSwitching) return;
+            IsSwitching = true;
+
+            Edge nextEdge = GraphGenerator.GetNextEdge(CurrentEdge);
+            if (nextEdge == null) return;
+
+            if (!GraphGenerator.IsConnected(CurrentEdge, nextEdge))
+            {
+                Debug.LogWarning("Not Conneceted!");
+                Rigidbody.velocity = Vector3.zero;
+                return;
+            }
+            else
+            {
+                Debug.LogWarning("Is Conneceted!");
+                CurrentEdge = nextEdge;
+            }
+
+            CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
+        }
     }
 
     private float GetDirectionDot()
@@ -104,9 +97,9 @@ public class Car : MonoBehaviour
         Vector3 position = transform.position;
 
         Gizmos.color = Color.green;
-        Gizmos.DrawLine(position, position + velocity);
+        Gizmos.DrawLine(position, position + (velocity * 7.5f));
 
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(position, position + transform.forward);
+        Gizmos.DrawLine(position, position + (transform.forward * 7.5f));
     }
 }

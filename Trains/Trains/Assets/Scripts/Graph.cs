@@ -34,6 +34,16 @@ public class Graph
         Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
 
         Dictionary<Edge, List<Edge>> edgeConnectionMap = CreateEdgeDictionary(Edges);
+        foreach (KeyValuePair<Edge, List<Edge>> kvp in edgeConnectionMap)
+        {
+            string output = string.Empty;
+            foreach (Edge edge in kvp.Value)
+            {
+                output += $"{edge.ToString()}, ";
+            }
+            Debug.Log($"{kvp.Key.ToString()} | {output}");
+        }
+
         EdgeConnectionMap = RemoveInvalidConnections(edgeConnectionMap);
         foreach (KeyValuePair<Edge, List<Edge>> kvp in EdgeConnectionMap)
         {
@@ -99,7 +109,6 @@ public class Graph
     #endregion
 
     #region Edge
-
     private List<Edge> CreateEdges(SplineContainer splineContainer)
     {
         List<Edge> output = new List<Edge>();
@@ -107,7 +116,6 @@ public class Graph
         foreach (Spline spline in splineContainer.Splines)
         {
             BezierKnot[] knots = spline.Knots.ToArray();
-            int globalIndex = 0;
 
             for (int i = 0; i < knots.Length - 1; i++)
             {
@@ -117,8 +125,8 @@ public class Graph
                 Node lessThanNode = PositionToNodeMap[posA];
                 Node greaterThanNode = PositionToNodeMap[posB];
 
-                output.Add(new Edge(i, globalIndex++, lessThanNode, greaterThanNode));
-                output.Add(new Edge(i, globalIndex++, greaterThanNode, lessThanNode));
+                output.Add(new Edge(i, lessThanNode, greaterThanNode));
+                output.Add(new Edge(i, greaterThanNode, lessThanNode));
             }
 
             if (spline.Closed)
@@ -130,8 +138,8 @@ public class Graph
                 Node greaterThanNode = PositionToNodeMap[posB];
 
                 int currentOutputCount = output.Count;
-                output.Add(new Edge(currentOutputCount, globalIndex++, lessThanNode, greaterThanNode));
-                output.Add(new Edge(currentOutputCount, globalIndex++, greaterThanNode, lessThanNode));
+                output.Add(new Edge(currentOutputCount, lessThanNode, greaterThanNode));
+                output.Add(new Edge(currentOutputCount, greaterThanNode, lessThanNode));
             }
         }
 
@@ -151,11 +159,6 @@ public class Graph
     public bool IsConnected(Edge a, Edge b)
     {
         return a.ToNode.Equals(b.FromNode);
-    }
-
-    public Edge GetInverseEdge(Edge edge)
-    {
-        return Edges[edge.InverseIndex];
     }
 
     private Dictionary<Edge, List<Edge>> CreateEdgeDictionary(List<Edge> allEdges)

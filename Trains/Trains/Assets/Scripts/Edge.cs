@@ -6,18 +6,15 @@ using UnityEngine.Splines;
 public class Edge
 {
     public int Index { get; private set; }
-    public int GlobalIndex { get; private set; }
-    public int InverseIndex { get; private set; }
     public Node FromNode { get; private set; }
     public Node ToNode { get; private set; }
     public float Weight { get; private set; }
     public Vector3 EdgeDireciton { get; private set; }
     public bool IsLessThanEdge { get; private set; }
 
-    public Edge(int index, int globalIndex, Node fromNode, Node toNode)
+    public Edge(int index, Node fromNode, Node toNode)
     {
         Index = index;
-        GlobalIndex = globalIndex;
 
         FromNode = fromNode;
         ToNode = toNode;
@@ -26,7 +23,6 @@ public class Edge
         Weight = Vector3.Distance(FromNode.Position, ToNode.Position);
 
         IsLessThanEdge = fromNode.Index < toNode.Index;
-        InverseIndex = IsLessThanEdge ? GlobalIndex + 1 : GlobalIndex - 1;
     }
 
     public float GetDot(Edge otherEdge)
@@ -68,7 +64,7 @@ public class Edge
     {
         if (obj == null || !(obj is Edge)) return false;
         Edge other = obj as Edge;
-        return GlobalIndex == other.GlobalIndex;
+        return FromNode.Equals(other.FromNode) && ToNode.Equals(other.ToNode);
     }
 
     public override int GetHashCode()
