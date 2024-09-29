@@ -20,6 +20,16 @@ public class Junction : MonoBehaviour
         debugText.SetText($"{Node.Index}");
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        Engine engine = other.gameObject.GetComponentInParent<Engine>();
+        if (engine)
+        {
+            Debug.LogWarning($"Enter Junction {Node.Index}");
+            Car car = other.gameObject.GetComponentInParent<Car>();
+        }
+    }
+
     public void OnTriggerExit(Collider other)
     {
         Engine engine = other.gameObject.GetComponentInParent<Engine>();
@@ -27,7 +37,7 @@ public class Junction : MonoBehaviour
         {
             Debug.LogWarning($"Exited Junction {Node.Index}");
             Car car = other.gameObject.GetComponentInParent<Car>();
-            car.IsSwitching = false;
+            car.OnJunctionExit();
         }
     }
 }

@@ -5,12 +5,10 @@ using UnityEngine;
 
 public class EdgeVisualization : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI debugText;
     [SerializeField] private LineRenderer lineRenderer;
     public void EdgeVisualizationInit(Edge edge)
     {
-        gameObject.name = $"{edge}";
-        debugText.SetText($"{edge.Index}"); 
+        gameObject.name = $"#{edge.Index} {edge}";
 
         //line renderer
         lineRenderer.positionCount = 2;
