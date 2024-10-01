@@ -96,7 +96,6 @@ public class GraphGenerator : MonoBehaviour
 
         for (int i = 0; i < graph.Edges.Count; i++)
         {
-            if (i % 2 != 0) continue;
             Edge edge = graph.Edges[i];
             Spline spline = new Spline(edge.GetKnots(), false);
             spline.SetTangentMode(TangentMode.AutoSmooth);
@@ -313,12 +312,22 @@ public class GraphGenerator : MonoBehaviour
         return Graph.Edges[index];
     }
 
+    public static Edge GetInverse(Edge edge)
+    {
+        return Graph.Edges[edge.InverseIndex];
+    }
+
+    public static Spline GetInverseEdgeSpline(Edge edge) 
+    {
+        return GetSpline(GetInverse(edge));
+    }
+
     public static Edge GetNextEdge(Edge edge)
     {
         Debug.LogWarning($"In {edge}");
         Graph.EdgeConnectionMap.TryGetValue(edge, out List<Edge> result);
         if (result == null) return null;
-        foreach (Edge e in result) 
+        foreach (Edge e in result)
             Debug.LogError(e);
 
         int randomIndex = Graph.Random.Next(0, result.Count);

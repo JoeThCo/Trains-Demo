@@ -6,6 +6,7 @@ using UnityEngine.Splines;
 public class Edge
 {
     public int Index { get; private set; }
+    public int InverseIndex { get; private set; }
     public Node FromNode { get; private set; }
     public Node ToNode { get; private set; }
     public float Weight { get; private set; }
@@ -23,6 +24,7 @@ public class Edge
         Weight = Vector3.Distance(FromNode.Position, ToNode.Position);
 
         IsLessThanEdge = fromNode.Index < toNode.Index;
+        InverseIndex = IsLessThanEdge ? Index + 1 : Index - 1;
     }
 
     public float GetDot(Edge otherEdge)
@@ -40,10 +42,10 @@ public class Edge
         return new List<BezierKnot> { FromNode.Knot, ToNode.Knot };
     }
 
-    public string GetKnotsToString() 
+    public string GetKnotsToString()
     {
         string output = string.Empty;
-        foreach (BezierKnot knot in GetKnots()) 
+        foreach (BezierKnot knot in GetKnots())
         {
             output += knot.Position.ToString();
         }

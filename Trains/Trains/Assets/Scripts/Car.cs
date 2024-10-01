@@ -11,19 +11,24 @@ public class Car : MonoBehaviour
     public Train Train { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
     public Edge CurrentEdge { get; private set; }
+    public Edge DirectionEdge { get; private set; }
     private Spline CurrentSpline { get; set; }
 
-    [SerializeField] private float debugLineDistance = 7.5f;
+    [SerializeField] private float gizmoLineDistance = 7.5f;
 
     private float t = 0;
     private float dot = 0;
+
     private bool isSwitching = false;
+    private bool isForward = true;
 
     private void Start()
     {
         Rigidbody = GetComponent<Rigidbody>();
 
         OnEdgeChanged(GraphGenerator.GetEdge(0));
+        Debug.Log(DirectionEdge);
+
         Rigidbody.position = CurrentEdge.GetHalfWay();
         transform.rotation = Quaternion.Euler(CurrentEdge.EdgeDireciton);
         UpdateCarTransform();
@@ -40,6 +45,13 @@ public class Car : MonoBehaviour
             isSwitching = true;
             OnJunctionEnter();
         }
+
+        if ((isForward && dot < 0) || (!isForward && dot > 0))
+        {
+            isForward = !isForward;
+            DirectionEdge = GraphGenerator.GetInverse(DirectionEdge);
+            Debug.Log(DirectionEdge);
+        }
     }
 
     public void Throttle(float power)
@@ -54,7 +66,9 @@ public class Car : MonoBehaviour
 
     public void OnJunctionEnter()
     {
-        Edge nextEdge = GraphGenerator.GetNextEdge(CurrentEdge);
+        Debug.Log($"Forward: {isForward} Edge: {DirectionEdge}");
+        Edge nextEdge = GraphGenerator.GetNextEdge(DirectionEdge);
+
         if (nextEdge == null) return;
         OnEdgeChanged(nextEdge);
 
@@ -66,15 +80,15 @@ public class Car : MonoBehaviour
     {
         float speed = Rigidbody.velocity.magnitude;
         if (speed < 0.1f)
-        {
             speed = 0;
-        }
-        Rigidbody.velocity = transform.forward * speed;
+        Rigidbody.velocity = isForward ? transform.forward * speed : transform.forward * -speed;
     }
 
     private void OnEdgeChanged(Edge edge)
     {
         CurrentEdge = edge;
+        DirectionEdge = CurrentEdge;
+
         CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
     }
 
@@ -88,11 +102,11 @@ public class Car : MonoBehaviour
         NativeSpline nativeSpline = new NativeSpline(CurrentSpline);
         SplineUtility.GetNearestPoint(new NativeSpline(CurrentSpline), Rigidbody.position, out float3 nearestPoint, out float newT);
         t = Mathf.Clamp01(newT);
-        //Debug.Log(t);
 
         Rigidbody.position = (Vector3)nearestPoint;
 
-        Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
+        Vector3 splineForward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
+        Vector3 forward = CurrentEdge.IsLessThanEdge ? splineForward : -splineForward;
         Vector3 up = nativeSpline.EvaluateUpVector(t);
 
         transform.rotation = Quaternion.LookRotation(forward, up);
@@ -105,7 +119,6 @@ public class Car : MonoBehaviour
         }
 
         Rigidbody.velocity = Rigidbody.velocity.magnitude * engineForward;
-        Debug.Log(dot);
     }
 
     bool IsAtEndOfSpline()
@@ -127,13 +140,13 @@ public class Car : MonoBehaviour
         Vector3 position = transform.position;
 
         Gizmos.color = Color.green;
-        Gizmos.DrawLine(position, position + (velocity * debugLineDistance));
+        Gizmos.DrawLine(position, position + (velocity * gizmoLineDistance));
 
         NativeSpline nativeSpline = new NativeSpline(CurrentSpline);
         SplineUtility.GetNearestPoint(new NativeSpline(CurrentSpline), Rigidbody.position, out float3 nearestPoint, out float newT);
         Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
 
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(position, position + (forward * debugLineDistance));
+        Gizmos.DrawLine(position, position + (forward * gizmoLineDistance));
     }
 }

@@ -34,16 +34,6 @@ public class Graph
         Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
 
         Dictionary<Edge, List<Edge>> edgeConnectionMap = CreateEdgeDictionary(Edges);
-        foreach (KeyValuePair<Edge, List<Edge>> kvp in edgeConnectionMap)
-        {
-            string output = string.Empty;
-            foreach (Edge edge in kvp.Value)
-            {
-                output += $"{edge.ToString()}, ";
-            }
-            Debug.Log($"{kvp.Key.ToString()} | {output}");
-        }
-
         EdgeConnectionMap = RemoveInvalidConnections(edgeConnectionMap);
         foreach (KeyValuePair<Edge, List<Edge>> kvp in EdgeConnectionMap)
         {
@@ -112,6 +102,7 @@ public class Graph
     private List<Edge> CreateEdges(SplineContainer splineContainer)
     {
         List<Edge> output = new List<Edge>();
+        int globalIndex = 0;
 
         foreach (Spline spline in splineContainer.Splines)
         {
@@ -125,8 +116,8 @@ public class Graph
                 Node lessThanNode = PositionToNodeMap[posA];
                 Node greaterThanNode = PositionToNodeMap[posB];
 
-                output.Add(new Edge(i, lessThanNode, greaterThanNode));
-                output.Add(new Edge(i, greaterThanNode, lessThanNode));
+                output.Add(new Edge(globalIndex++, lessThanNode, greaterThanNode));
+                output.Add(new Edge(globalIndex++, greaterThanNode, lessThanNode));
             }
 
             if (spline.Closed)
@@ -137,9 +128,8 @@ public class Graph
                 Node lessThanNode = PositionToNodeMap[posA];
                 Node greaterThanNode = PositionToNodeMap[posB];
 
-                int currentOutputCount = output.Count;
-                output.Add(new Edge(currentOutputCount, lessThanNode, greaterThanNode));
-                output.Add(new Edge(currentOutputCount, greaterThanNode, lessThanNode));
+                output.Add(new Edge(globalIndex++, lessThanNode, greaterThanNode));
+                output.Add(new Edge(globalIndex++, greaterThanNode, lessThanNode));
             }
         }
 
@@ -215,6 +205,5 @@ public class Graph
 
         return tempDict;
     }
-
     #endregion
 }
