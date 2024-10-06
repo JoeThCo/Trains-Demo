@@ -11,7 +11,6 @@ public class Car : MonoBehaviour
     public Train Train { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
     public Edge CurrentEdge { get; private set; }
-    public Edge DirectionEdge { get; private set; }
     private Spline CurrentSpline { get; set; }
 
     [SerializeField] private float gizmoLineDistance = 7.5f;
@@ -22,12 +21,13 @@ public class Car : MonoBehaviour
     private bool isSwitching = false;
     private bool isForward = true;
 
+    private const float ENTER_EPSILON = .005f;
+
     private void Start()
     {
         Rigidbody = GetComponent<Rigidbody>();
 
         OnEdgeChanged(GraphGenerator.GetEdge(0));
-        Debug.Log(DirectionEdge);
 
         Rigidbody.position = CurrentEdge.GetHalfWay();
         transform.rotation = Quaternion.Euler(CurrentEdge.EdgeDireciton);
@@ -38,6 +38,7 @@ public class Car : MonoBehaviour
 
     private void FixedUpdate()
     {
+        dot = GetDirectionDot();
         UpdateCarTransform();
 
         if (!isSwitching && IsAtEndOfSpline())
@@ -49,8 +50,6 @@ public class Car : MonoBehaviour
         if ((isForward && dot < 0) || (!isForward && dot > 0))
         {
             isForward = !isForward;
-            DirectionEdge = GraphGenerator.GetInverse(DirectionEdge);
-            Debug.Log(DirectionEdge);
         }
     }
 
@@ -66,9 +65,16 @@ public class Car : MonoBehaviour
 
     public void OnJunctionEnter()
     {
-        Debug.Log($"Forward: {isForward} Edge: {DirectionEdge}");
-        Edge nextEdge = GraphGenerator.GetNextEdge(DirectionEdge);
+        //Debug.Log($"Dot: {dot} IsForward: {isForward}");
+        Edge inputEdge = CurrentEdge;
 
+        if (!isForward && dot < 0)
+        {
+            Debug.Log($"Dot: {dot} IsForward: {isForward}");
+            inputEdge = GraphGenerator.GetInverse(CurrentEdge);
+        }
+
+        Edge nextEdge = GraphGenerator.GetNextEdge(inputEdge);
         if (nextEdge == null) return;
         OnEdgeChanged(nextEdge);
 
@@ -87,8 +93,6 @@ public class Car : MonoBehaviour
     private void OnEdgeChanged(Edge edge)
     {
         CurrentEdge = edge;
-        DirectionEdge = CurrentEdge;
-
         CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
     }
 
@@ -105,14 +109,12 @@ public class Car : MonoBehaviour
 
         Rigidbody.position = (Vector3)nearestPoint;
 
-        Vector3 splineForward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
-        Vector3 forward = CurrentEdge.IsLessThanEdge ? splineForward : -splineForward;
+        Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
         Vector3 up = nativeSpline.EvaluateUpVector(t);
 
         transform.rotation = Quaternion.LookRotation(forward, up);
-        Vector3 engineForward = transform.forward;
 
-        dot = GetDirectionDot();
+        Vector3 engineForward = transform.forward;
         if (dot < 0)
         {
             engineForward *= -1;
@@ -123,7 +125,7 @@ public class Car : MonoBehaviour
 
     bool IsAtEndOfSpline()
     {
-        return t <= .01 || t >= .99;
+        return t <= 0 + ENTER_EPSILON || t >= 1 - ENTER_EPSILON;
     }
 
     private float GetDirectionDot()
