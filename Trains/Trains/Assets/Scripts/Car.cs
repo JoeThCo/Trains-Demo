@@ -20,6 +20,7 @@ public class Car : MonoBehaviour
 
     private bool isSwitching = false;
     private bool isForward = true;
+    private bool isRotationBackwards = false;
 
     private const float ENTER_EPSILON = .005f;
 
@@ -65,12 +66,12 @@ public class Car : MonoBehaviour
 
     public void OnJunctionEnter()
     {
-        //Debug.Log($"Dot: {dot} IsForward: {isForward}");
         Edge inputEdge = CurrentEdge;
 
-        if (!isForward && dot < 0)
+        if (!isForward && !isRotationBackwards || isForward && isRotationBackwards)
         {
-            Debug.Log($"Dot: {dot} IsForward: {isForward}");
+            Debug.Log($"isRotationBackwards Flipped! {isRotationBackwards}");
+            isRotationBackwards = !isRotationBackwards;
             inputEdge = GraphGenerator.GetInverse(CurrentEdge);
         }
 
@@ -112,7 +113,7 @@ public class Car : MonoBehaviour
         Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
         Vector3 up = nativeSpline.EvaluateUpVector(t);
 
-        transform.rotation = Quaternion.LookRotation(forward, up);
+        transform.rotation = isRotationBackwards ? Quaternion.LookRotation(-forward, up) : Quaternion.LookRotation(forward, up) ;
 
         Vector3 engineForward = transform.forward;
         if (dot < 0)

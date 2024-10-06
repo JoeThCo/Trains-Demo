@@ -17,7 +17,7 @@ public class Graph
 
     public Graph(SplineContainer splineContainer)
     {
-        Random = new System.Random();
+        Random = new System.Random(0);
 
         Nodes = new List<Node>();
         Edges = new List<Edge>();
