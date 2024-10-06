@@ -146,31 +146,34 @@ public class Graph
         return output;
     }
 
-    public bool IsConnected(Edge a, Edge b)
-    {
-        return a.ToNode.Equals(b.FromNode);
-    }
-
     private Dictionary<Edge, List<Edge>> CreateEdgeDictionary(List<Edge> allEdges)
     {
+        Dictionary<Node, List<Edge>> edgesStartingFromNode = new Dictionary<Node, List<Edge>>();
+        foreach (Edge edge in allEdges)
+        {
+            if (!edgesStartingFromNode.ContainsKey(edge.FromNode))
+                edgesStartingFromNode[edge.FromNode] = new List<Edge>();
+            edgesStartingFromNode[edge.FromNode].Add(edge);
+        }
+
         Dictionary<Edge, List<Edge>> dict = new Dictionary<Edge, List<Edge>>();
 
         foreach (Edge firstEdge in allEdges)
         {
-            foreach (Edge secondEdge in allEdges)
+            if (edgesStartingFromNode.TryGetValue(firstEdge.ToNode, out var connectedEdges))
             {
-                if (firstEdge.Equals(secondEdge)) continue;
-                if (firstEdge.FromNode.Equals(secondEdge.ToNode)) continue;
-
-                if (firstEdge.ToNode.Equals(secondEdge.FromNode))
+                foreach (Edge secondEdge in connectedEdges)
                 {
-                    if (dict.ContainsKey(firstEdge))
-                        dict[firstEdge].Add(secondEdge);
-                    else
-                        dict[firstEdge] = new List<Edge> { secondEdge };
+                    if (firstEdge.Equals(secondEdge)) continue;
+                    if (firstEdge.FromNode.Equals(secondEdge.ToNode)) continue;
+
+                    if (!dict.ContainsKey(firstEdge))
+                        dict[firstEdge] = new List<Edge>();
+                    dict[firstEdge].Add(secondEdge);
                 }
             }
         }
+
         return dict;
     }
 
@@ -180,30 +183,31 @@ public class Graph
 
         foreach (KeyValuePair<Edge, List<Edge>> kvp in input)
         {
-            if (!kvp.Key.ToNode.IsJunction)
+            Edge keyEdge = kvp.Key;
+
+            if (!keyEdge.ToNode.IsJunction)
             {
-                tempDict[kvp.Key] = kvp.Value;
+                tempDict[keyEdge] = kvp.Value;
             }
             else
             {
                 List<Edge> validEdges = new List<Edge>();
                 foreach (Edge edge in kvp.Value)
                 {
-                    float dot = kvp.Key.GetDot(edge);
-                    float angle = kvp.Key.GetAngleDifference(edge);
+                    float dot = keyEdge.GetDot(edge);
+                    if (dot < 0) continue;
 
-                    //Debug.LogError($"{kvp.Key} vs {edge}");
-                    //Debug.Log($"{kvp.Key} | {edge} Dot: {dot}");
-                    //Debug.Log($"{kvp.Key} | {edge}  Angle : {angle}");
-                    if (dot >= 0 && angle < 60)
-                        validEdges.Add(edge);
+                    float angle = keyEdge.GetAngleDifference(edge);
+                    if (angle >= 60) continue;
+
+                    validEdges.Add(edge);
                 }
-
-                tempDict[kvp.Key] = validEdges;
+                tempDict[keyEdge] = validEdges;
             }
         }
 
         return tempDict;
     }
+
     #endregion
 }

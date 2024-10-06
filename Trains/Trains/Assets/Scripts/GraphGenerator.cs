@@ -297,11 +297,6 @@ public class GraphGenerator : MonoBehaviour
     #endregion
 
     #region Static Methods
-    public static bool IsConnected(Edge a, Edge b)
-    {
-        return Graph.IsConnected(a, b);
-    }
-
     public static Spline GetSpline(Edge edge)
     {
         return FinalSplineContainer.Splines[edge.Index];
