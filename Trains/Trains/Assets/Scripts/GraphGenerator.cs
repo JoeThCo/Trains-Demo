@@ -126,14 +126,6 @@ public class GraphGenerator : MonoBehaviour
         return points;
     }
 
-    private HashSet<Vector3> GetInterpolatedSplineContainerPoints(List<Spline> splines, float distanceStep)
-    {
-        HashSet<Vector3> points = new HashSet<Vector3>();
-        foreach (Spline spline in splines)
-            points.AddRange(GetInterpolatedSplinePoints(spline, distanceStep));
-        return points;
-    }
-
     private HashSet<Vector3> MakeEqualDistanced(Vector3[] originalPoints, float distanceStep)
     {
         HashSet<Vector3> equalDistancePoints = new HashSet<Vector3>();
@@ -199,22 +191,19 @@ public class GraphGenerator : MonoBehaviour
     private List<Spline> GetFinalSplines(List<Spline> graphSplines, float distanceStep)
     {
         List<Spline> splines = new List<Spline>();
-        //do I need to do this twice?
-        HashSet<Vector3> inputPoints = GetInterpolatedSplineContainerPoints(graphSplines, distanceStep);
 
         foreach (Spline spline in graphSplines)
         {
-            //do I need to do this twice?
             List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
             HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>() { splinePoints[0] };
 
             foreach (Vector3 point in splinePoints)
             {
-                //i feel like this is bad lol
                 NativeSpline nativeSpline = new NativeSpline(GetNearestSpline(point, InputSplineContainer));
                 SplineUtility.GetNearestPoint(nativeSpline, point, out float3 nearest, out float t);
                 outputSplinePoints.Add(nearest);
             }
+
             outputSplinePoints.Add(splinePoints[splinePoints.Count - 1]);
 
             HashSet<Vector3> outputPoints = MakeEqualDistanced(outputSplinePoints.ToArray(), distanceStep);
@@ -312,7 +301,7 @@ public class GraphGenerator : MonoBehaviour
         return Graph.Edges[edge.InverseIndex];
     }
 
-    public static Spline GetInverseEdgeSpline(Edge edge) 
+    public static Spline GetInverseEdgeSpline(Edge edge)
     {
         return GetSpline(GetInverse(edge));
     }
