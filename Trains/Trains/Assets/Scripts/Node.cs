@@ -9,7 +9,6 @@ public class Node
     public BezierKnot Knot { get; private set; }
     public Vector3 Position { get; private set; }
     public Degrees Degrees { get; private set; }
-
     public bool IsJunction { get; private set; }
     public bool IsEnd {  get; private set; }
 
@@ -36,7 +35,7 @@ public class Node
 
     public override int GetHashCode()
     {
-        return Index.GetHashCode();
+        return Index;
     }
 
     public override string ToString()

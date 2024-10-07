@@ -33,8 +33,8 @@ public class Graph
         SetDegrees(Nodes, AdjacencyMatrix);
         Debug.Log($"Graph Info: Nodes: {Nodes.Count} | Edges: {Edges.Count}");
 
-        Dictionary<Edge, List<Edge>> edgeConnectionMap = CreateEdgeDictionary(Edges);
-        EdgeConnectionMap = RemoveInvalidConnections(edgeConnectionMap);
+        Debug.LogWarning("Final Edges:");
+        EdgeConnectionMap = RemoveInvalidConnections(CreateEdgeDictionary(Edges));
         foreach (KeyValuePair<Edge, List<Edge>> kvp in EdgeConnectionMap)
         {
             string output = string.Empty;
@@ -151,16 +151,19 @@ public class Graph
         Dictionary<Node, List<Edge>> edgesStartingFromNode = new Dictionary<Node, List<Edge>>();
         foreach (Edge edge in allEdges)
         {
+            if (edge.FromNode.Equals(edge.ToNode)) continue;
+
             if (!edgesStartingFromNode.ContainsKey(edge.FromNode))
                 edgesStartingFromNode[edge.FromNode] = new List<Edge>();
             edgesStartingFromNode[edge.FromNode].Add(edge);
         }
 
         Dictionary<Edge, List<Edge>> dict = new Dictionary<Edge, List<Edge>>();
-
         foreach (Edge firstEdge in allEdges)
         {
-            if (edgesStartingFromNode.TryGetValue(firstEdge.ToNode, out var connectedEdges))
+            if (firstEdge.FromNode.Equals(firstEdge.ToNode)) continue;
+
+            if (edgesStartingFromNode.TryGetValue(firstEdge.ToNode, out List<Edge> connectedEdges))
             {
                 foreach (Edge secondEdge in connectedEdges)
                 {

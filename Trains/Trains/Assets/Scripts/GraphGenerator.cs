@@ -92,6 +92,9 @@ public class GraphGenerator : MonoBehaviour
     #region Splines
     private List<Spline> GetSplinesFromEdge(Graph graph)
     {
+        // halfway between the points n-1 and 1 or 1 and n-1
+        //edge connection graph gets the next ones
+
         List<Spline> splines = new List<Spline>();
 
         for (int i = 0; i < graph.Edges.Count; i++)
@@ -311,8 +314,8 @@ public class GraphGenerator : MonoBehaviour
         Debug.LogWarning($"In {edge}");
         Graph.EdgeConnectionMap.TryGetValue(edge, out List<Edge> result);
         if (result == null) return null;
-        foreach (Edge e in result)
-            Debug.LogError(e);
+        foreach (Edge mapEdges in result)
+            Debug.LogError(mapEdges);
 
         int randomIndex = Graph.Random.Next(0, result.Count);
         Edge outputEdge = result[randomIndex];
