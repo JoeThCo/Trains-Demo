@@ -92,9 +92,6 @@ public class GraphGenerator : MonoBehaviour
     #region Splines
     private List<Spline> GetSplinesFromEdge(Graph graph)
     {
-        // halfway between the points n-1 and 1 or 1 and n-1
-        //edge connection graph gets the next ones
-
         List<Spline> splines = new List<Spline>();
 
         for (int i = 0; i < graph.Edges.Count; i++)
@@ -174,13 +171,8 @@ public class GraphGenerator : MonoBehaviour
             float3 closestPointOnSpline;
             float t;
 
-            // Get the closest point on the spline to the given position
             SplineUtility.GetNearestPoint(spline, position, out closestPointOnSpline, out t);
-
-            // Calculate the distance between the given position and the closest point on the spline
             float distance = Vector3.Distance(position, closestPointOnSpline);
-
-            // If this distance is less than the current minimum, update the nearest spline
             if (distance < minDistance)
             {
                 minDistance = distance;
@@ -235,10 +227,7 @@ public class GraphGenerator : MonoBehaviour
 
     private void DebugEdgeInfo()
     {
-        //load prefabs
         EdgePrefab = Resources.Load<EdgeVisualization>("Edge");
-
-        //draw debug info
         DisplayEdgeDebug(Graph);
     }
 

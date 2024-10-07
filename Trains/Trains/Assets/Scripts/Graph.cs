@@ -116,6 +116,8 @@ public class Graph
                 Node lessThanNode = PositionToNodeMap[posA];
                 Node greaterThanNode = PositionToNodeMap[posB];
 
+                if (lessThanNode.Equals(greaterThanNode)) continue;
+
                 output.Add(new Edge(globalIndex++, lessThanNode, greaterThanNode));
                 output.Add(new Edge(globalIndex++, greaterThanNode, lessThanNode));
             }
@@ -127,6 +129,8 @@ public class Graph
 
                 Node lessThanNode = PositionToNodeMap[posA];
                 Node greaterThanNode = PositionToNodeMap[posB];
+
+                if (lessThanNode.Equals(greaterThanNode)) continue;
 
                 output.Add(new Edge(globalIndex++, lessThanNode, greaterThanNode));
                 output.Add(new Edge(globalIndex++, greaterThanNode, lessThanNode));
@@ -151,8 +155,6 @@ public class Graph
         Dictionary<Node, List<Edge>> edgesStartingFromNode = new Dictionary<Node, List<Edge>>();
         foreach (Edge edge in allEdges)
         {
-            if (edge.FromNode.Equals(edge.ToNode)) continue;
-
             if (!edgesStartingFromNode.ContainsKey(edge.FromNode))
                 edgesStartingFromNode[edge.FromNode] = new List<Edge>();
             edgesStartingFromNode[edge.FromNode].Add(edge);
@@ -161,8 +163,6 @@ public class Graph
         Dictionary<Edge, List<Edge>> dict = new Dictionary<Edge, List<Edge>>();
         foreach (Edge firstEdge in allEdges)
         {
-            if (firstEdge.FromNode.Equals(firstEdge.ToNode)) continue;
-
             if (edgesStartingFromNode.TryGetValue(firstEdge.ToNode, out List<Edge> connectedEdges))
             {
                 foreach (Edge secondEdge in connectedEdges)
