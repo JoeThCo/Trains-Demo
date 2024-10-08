@@ -41,7 +41,7 @@ public class Car : MonoBehaviour
 
         OnEdgeChanged(GraphGenerator.GetEdge(0));
 
-        Rigidbody.position = CurrentEdge.GetHalfWay();
+        Rigidbody.position = CurrentEdge.MidPoint;
         transform.rotation = Quaternion.Euler(CurrentEdge.EdgeDireciton);
         FixedUpdate();
 

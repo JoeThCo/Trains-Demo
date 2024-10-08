@@ -10,7 +10,8 @@ public class Node
     public Vector3 Position { get; private set; }
     public Degrees Degrees { get; private set; }
     public bool IsJunction { get; private set; }
-    public bool IsEnd {  get; private set; }
+
+    private const int MINIMUM_JUNCTION_COUNT = 2;
 
     public Node(int index, BezierKnot knot)
     {
@@ -22,8 +23,7 @@ public class Node
     public void SetDegrees(Degrees degrees)
     {
         Degrees = degrees;
-        IsJunction = Degrees.InDegree > 2 || Degrees.OutDegree > 2;
-        IsEnd = Degrees.InDegree <= 1 && Degrees.OutDegree <= 1;
+        IsJunction = Degrees.InDegree > MINIMUM_JUNCTION_COUNT || Degrees.OutDegree > MINIMUM_JUNCTION_COUNT;
     }
 
     public override bool Equals(object obj)

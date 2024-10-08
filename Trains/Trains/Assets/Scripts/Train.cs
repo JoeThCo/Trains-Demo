@@ -22,11 +22,6 @@ public class Train : MonoBehaviour
         }
     }
 
-    public int GetConnectedCarsCount()
-    {
-        return GetConnectedCars().Count;
-    }
-
     List<Car> GetConnectedCars()
     {
         List<Car> connectedCars = new List<Car>();

@@ -11,6 +11,8 @@ public class Edge
     public Node ToNode { get; private set; }
     public float Weight { get; private set; }
     public Vector3 EdgeDireciton { get; private set; }
+    public BezierKnot[] Knots { get; private set; }
+    public Vector4 MidPoint { get; private set; }
 
     public Edge(int index, Node fromNode, Node toNode)
     {
@@ -18,6 +20,9 @@ public class Edge
 
         FromNode = fromNode;
         ToNode = toNode;
+
+        MidPoint = Vector3.Lerp(FromNode.Position, ToNode.Position, .5f);
+        Knots = new BezierKnot[] { FromNode.Knot, ToNode.Knot };
 
         EdgeDireciton = (FromNode.Position - ToNode.Position).normalized;
         Weight = Vector3.Distance(FromNode.Position, ToNode.Position);
@@ -33,16 +38,6 @@ public class Edge
     public float GetAngleDifference(Edge otherEdge)
     {
         return Vector3.Angle(EdgeDireciton, otherEdge.EdgeDireciton);
-    }
-
-    public List<BezierKnot> GetKnots()
-    {
-        return new List<BezierKnot> { FromNode.Knot, ToNode.Knot };
-    }
-
-    public Vector3 GetHalfWay()
-    {
-        return Vector3.Lerp(FromNode.Position, ToNode.Position, .5f);
     }
 
     public override string ToString()
