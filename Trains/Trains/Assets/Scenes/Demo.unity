@@ -12361,9 +12361,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1525208185}
-  - component: {fileID: 1525208188}
-  - component: {fileID: 1525208187}
   - component: {fileID: 1525208186}
+  - component: {fileID: 1525208188}
   - component: {fileID: 1525208189}
   m_Layer: 0
   m_Name: Engine
@@ -12400,22 +12399,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21145e4314f1b5d45877ff312a26ea28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  power: 10
---- !u!114 &1525208187
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1525208184}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b5da25e8cf5ba7a41bee6bfd9ac19d10, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  positionLerpSpeed: 25
-  rotationLerpSpeed: 15
   gizmoLineDistance: 7.5
+  power: 10
 --- !u!54 &1525208188
 Rigidbody:
   m_ObjectHideFlags: 0

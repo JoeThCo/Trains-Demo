@@ -25,7 +25,7 @@ public class Junction : MonoBehaviour
         Engine engine = other.gameObject.GetComponentInParent<Engine>();
         if (engine)
         {
-            Debug.LogWarning($"Enter Junction {Node.Index}");
+            //Debug.LogWarning($"Enter Junction {Node.Index}");
             Car car = other.gameObject.GetComponentInParent<Car>();
         }
     }
@@ -35,7 +35,7 @@ public class Junction : MonoBehaviour
         Engine engine = other.gameObject.GetComponentInParent<Engine>();
         if (engine)
         {
-            Debug.LogWarning($"Exited Junction {Node.Index}");
+            //Debug.LogWarning($"Exited Junction {Node.Index}");
             Car car = other.gameObject.GetComponentInParent<Car>();
             car.OnJunctionExit();
         }

@@ -3,30 +3,32 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(Car))]
-public class Engine : MonoBehaviour
+public class Engine : Car
 {
     [Range(-10, 10)][SerializeField] private float power = 0;
 
-    public Car Car { get; private set; }
-    public Rigidbody Rigidbody { get; private set; }
-
-    private void Start()
+    protected override void CarInit()
     {
-        Rigidbody = GetComponent<Rigidbody>();
-        Car = GetComponent<Car>();
+        base.CarInit();
     }
 
-    private void FixedUpdate()
+    protected void Throttle(float power)
     {
+        Rigidbody.AddForce(transform.forward * power);
+    }
+
+    protected override void FixedUpdate()
+    {
+        base.FixedUpdate();
+
         if (Input.GetKey(KeyCode.W))
         {
-            Car.Throttle(power);
+            Throttle(power);
         }
 
         if (Input.GetKey(KeyCode.S))
         {
-            Car.Throttle(-power);
+            Throttle(-power);
         }
     }
 }

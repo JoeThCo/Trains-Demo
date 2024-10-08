@@ -13,14 +13,10 @@ public class Car : MonoBehaviour
     public Edge CurrentEdge { get; private set; }
     private Spline CurrentSpline { get; set; }
 
-    [SerializeField][Range(1f, 25f)] private float positionLerpSpeed = 5f;
-    [SerializeField][Range(1f, 25f)] private float rotationLerpSpeed = 5f;
-
     private Vector3 wantedPosition;
     private Quaternion wantedRotation;
 
     [SerializeField] private float gizmoLineDistance = 7.5f;
-
 
     private float t = 0;
     private float dot = 0;
@@ -31,7 +27,15 @@ public class Car : MonoBehaviour
 
     private const float ENTER_EPSILON = .005f;
 
+    private const int POSITION_LERP_SPEED = 20;
+    private const int ROTATION_LERP_SPEED = 15;
+
     private void Start()
+    {
+        CarInit();
+    }
+
+    protected virtual void CarInit()
     {
         Rigidbody = GetComponent<Rigidbody>();
 
@@ -44,13 +48,13 @@ public class Car : MonoBehaviour
         Debug.LogWarning($"Edge: {CurrentEdge.Index}");
     }
 
-    private void FixedUpdate()
+    protected virtual void FixedUpdate()
     {
         dot = GetDirectionDot();
         UpdateCarTransform();
 
-        Rigidbody.position = Vector3.Lerp(Rigidbody.position, wantedPosition, positionLerpSpeed * Time.fixedDeltaTime);
-        transform.rotation = Quaternion.Slerp(transform.rotation, wantedRotation, rotationLerpSpeed * Time.fixedDeltaTime);
+        Rigidbody.position = Vector3.Lerp(Rigidbody.position, wantedPosition, POSITION_LERP_SPEED * Time.fixedDeltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, wantedRotation, ROTATION_LERP_SPEED * Time.fixedDeltaTime);
 
         if (!isSwitching && IsAtEndOfSpline())
         {
@@ -62,11 +66,6 @@ public class Car : MonoBehaviour
         {
             isForward = !isForward;
         }
-    }
-
-    public void Throttle(float power)
-    {
-        Rigidbody.AddForce(transform.forward * power);
     }
 
     public void SetTrain(Train train)

@@ -300,15 +300,16 @@ public class GraphGenerator : MonoBehaviour
 
     public static Edge GetNextEdge(Edge edge)
     {
-        Debug.LogWarning($"In {edge}");
+        //Debug.LogWarning($"In {edge}");
         Graph.EdgeConnectionMap.TryGetValue(edge, out List<Edge> result);
         if (result == null) return null;
-        foreach (Edge mapEdges in result)
-            Debug.LogError(mapEdges);
+
+        //foreach (Edge mapEdges in result)
+            //Debug.LogError(mapEdges);
 
         int randomIndex = Graph.Random.Next(0, result.Count);
         Edge outputEdge = result[randomIndex];
-        Debug.LogWarning($"Out {outputEdge}");
+        //Debug.LogWarning($"Out {outputEdge}");
         return outputEdge;
     }
     #endregion
