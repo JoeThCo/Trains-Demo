@@ -14,13 +14,16 @@ public class GraphGeneratorEditor : Editor
 
         GraphGenerator graphGenerator = target as GraphGenerator;
         if (GUILayout.Button("Create Graph"))
-        {
             graphGenerator.CreateGraph();
-        }
 
         if (GUILayout.Button("Reset"))
-        {
             graphGenerator.ResetGraph();
-        }
+
+        GUILayout.Space(10);
+        if (GUILayout.Button("Round Position"))
+            graphGenerator.RoundBezierKnots();
+
+        if (GUILayout.Button("Zero Y"))
+            graphGenerator.ZeroYBezierKnots();
     }
 }

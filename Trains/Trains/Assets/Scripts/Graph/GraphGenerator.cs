@@ -64,6 +64,46 @@ public class GraphGenerator : MonoBehaviour
         CreateGameplay();
     }
 
+    #region Editor Only
+    public void ZeroYBezierKnots()
+    {
+        InputSplineContainer = GetComponent<SplineContainer>();
+
+        foreach (Spline spline in InputSplineContainer.Splines)
+        {
+            for (int i = 0; i < spline.Count; i++)
+            {
+                spline.SetKnot(i, new BezierKnot(new Vector3(spline[i].Position.x, 0, spline[i].Position.z)));
+            }
+        }
+    }
+
+    public void RoundBezierKnots() 
+    {
+        InputSplineContainer = GetComponent<SplineContainer>();
+
+        foreach (Spline spline in InputSplineContainer.Splines)
+        {
+            for (int i = 0; i < spline.Count; i++)
+            {
+                Vector3 pos = spline[i].Position;
+                pos = RoundToNearest(pos, 5);
+
+                spline.SetKnot(i, new BezierKnot(pos));
+            }
+        }
+    }
+
+    private Vector3 RoundToNearest(Vector3 vector, float n)
+    {
+        return new Vector3(
+            Mathf.Round(vector.x / n) * n,
+            Mathf.Round(vector.y / n) * n,
+            Mathf.Round(vector.z / n) * n
+        );
+    }
+    #endregion
+
 
     #region Gameplay
     private void CreateGameplay()
