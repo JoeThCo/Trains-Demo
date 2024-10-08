@@ -30,42 +30,44 @@ public class Car : MonoBehaviour
     private const int POSITION_LERP_SPEED = 20;
     private const int ROTATION_LERP_SPEED = 15;
 
+    public delegate void EdgeChanged(Edge edge);
+    public delegate void JunctionAction();
+
+    public event EdgeChanged OnEdgeChanged;
+    public event JunctionAction OnJunctionEnter;
+    public event JunctionAction OnJunctionExit;
+    public event JunctionAction OnDeadEnd;
+
     private void Start()
     {
+        OnEdgeChanged += Car_OnEdgeChanged;
+
+        OnJunctionEnter += Car_OnJunctionEnter;
+        OnJunctionExit += Car_OnJunctionExit;
+        OnDeadEnd += Car_OnDeadEnd;
+
         CarInit();
+    }
+
+    private void OnDisable()
+    {
+        OnEdgeChanged -= Car_OnEdgeChanged;
+
+        OnJunctionEnter -= Car_OnJunctionEnter;
+        OnJunctionExit -= Car_OnJunctionExit;
+        OnDeadEnd -= Car_OnDeadEnd;
     }
 
     protected virtual void CarInit()
     {
         Rigidbody = GetComponent<Rigidbody>();
 
-        OnEdgeChanged(GraphGenerator.GetEdge(0));
+        Car_OnEdgeChanged(GraphGenerator.GetEdge(0));
+        Debug.LogWarning($"Edge: {CurrentEdge.Index}");
 
         Rigidbody.position = CurrentEdge.MidPoint;
         transform.rotation = Quaternion.Euler(CurrentEdge.EdgeDireciton);
         FixedUpdate();
-
-        Debug.LogWarning($"Edge: {CurrentEdge.Index}");
-    }
-
-    protected virtual void FixedUpdate()
-    {
-        dot = GetDirectionDot();
-        UpdateCarTransform();
-
-        Rigidbody.position = Vector3.Lerp(Rigidbody.position, wantedPosition, POSITION_LERP_SPEED * Time.fixedDeltaTime);
-        transform.rotation = Quaternion.Slerp(transform.rotation, wantedRotation, ROTATION_LERP_SPEED * Time.fixedDeltaTime);
-
-        if (!isSwitching && IsAtEndOfSpline())
-        {
-            isSwitching = true;
-            OnJunctionEnter();
-        }
-
-        if ((isForward && dot < 0) || (!isForward && dot > 0))
-        {
-            isForward = !isForward;
-        }
     }
 
     public void SetTrain(Train train)
@@ -73,9 +75,38 @@ public class Car : MonoBehaviour
         Train = train;
     }
 
-    #region Junctions
-    public void OnJunctionEnter()
+    protected virtual void FixedUpdate()
     {
+        dot = Vector3.Dot(Rigidbody.velocity, transform.forward);
+        UpdateCarTransform();
+
+        Rigidbody.position = Vector3.Lerp(Rigidbody.position, wantedPosition, POSITION_LERP_SPEED * Time.fixedDeltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, wantedRotation, ROTATION_LERP_SPEED * Time.fixedDeltaTime);
+
+        if (!isSwitching && IsAtEndOfSpline())
+            OnJunctionEnter?.Invoke();
+
+        if (isSwitching && !IsAtEndOfSpline())
+            OnJunctionExit?.Invoke();
+
+        if ((isForward && dot < 0) || (!isForward && dot > 0))
+            isForward = !isForward;
+    }
+
+    #region Events
+    private void Car_OnDeadEnd()
+    {
+        Rigidbody.velocity = Vector3.zero;
+    }
+
+    private void Car_OnJunctionExit()
+    {
+        isSwitching = false;
+    }
+
+    private void Car_OnJunctionEnter()
+    {
+        isSwitching = true;
         Edge inputEdge = CurrentEdge;
 
         if (!isForward && !isRotationBackwards || isForward && isRotationBackwards)
@@ -88,28 +119,18 @@ public class Car : MonoBehaviour
         Edge nextEdge = GraphGenerator.GetNextEdge(inputEdge);
         if (nextEdge == null)
         {
-            OnDeadEndHit();
+            OnDeadEnd?.Invoke();
             return;
         }
 
-        OnEdgeChanged(nextEdge);
+        OnEdgeChanged?.Invoke(nextEdge);
         UpdateCarTransform();
     }
 
-    private void OnDeadEndHit()
-    {
-        Rigidbody.velocity = Vector3.zero;
-    }
-
-    private void OnEdgeChanged(Edge edge)
+    private void Car_OnEdgeChanged(Edge edge)
     {
         CurrentEdge = edge;
         CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
-    }
-
-    public void OnJunctionExit()
-    {
-        isSwitching = false;
     }
     #endregion
 
@@ -128,9 +149,7 @@ public class Car : MonoBehaviour
 
         Vector3 engineForward = wantedRotation * Vector3.forward;
         if (dot < 0)
-        {
             engineForward *= -1;
-        }
         Rigidbody.velocity = Rigidbody.velocity.magnitude * engineForward;
     }
 
@@ -138,13 +157,9 @@ public class Car : MonoBehaviour
     {
         return t <= 0 + ENTER_EPSILON || t >= 1 - ENTER_EPSILON;
     }
-
-    private float GetDirectionDot()
-    {
-        return Vector3.Dot(Rigidbody.velocity, transform.forward);
-    }
     #endregion
 
+    #region Gizmos
     void OnDrawGizmos()
     {
         if (Rigidbody == null) return;
@@ -163,4 +178,5 @@ public class Car : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawLine(position, position + (forward * gizmoLineDistance));
     }
+    #endregion
 }

@@ -19,15 +19,4 @@ public class Junction : MonoBehaviour
 
         debugText.SetText($"{Node.Index}");
     }
-
-    public void OnTriggerExit(Collider other)
-    {
-        Engine engine = other.gameObject.GetComponentInParent<Engine>();
-        if (engine)
-        {
-            //Debug.LogWarning($"Exited Junction {Node.Index}");
-            Car car = other.gameObject.GetComponentInParent<Car>();
-            car.OnJunctionExit();
-        }
-    }
 }
