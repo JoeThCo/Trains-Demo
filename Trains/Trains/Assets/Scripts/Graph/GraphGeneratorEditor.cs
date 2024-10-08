@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(GraphGenerator))]
 public class GraphGeneratorEditor : Editor
 {
@@ -27,3 +28,4 @@ public class GraphGeneratorEditor : Editor
             graphGenerator.ZeroYBezierKnots();
     }
 }
+#endif
