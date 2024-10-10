@@ -8,7 +8,7 @@ using UnityEngine.Splines;
 [RequireComponent(typeof(Rigidbody))]
 public class Car : MonoBehaviour
 {
-    public Train Train { get; private set; }
+    public int Index { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
     public Edge CurrentEdge { get; private set; }
     private Spline CurrentSpline { get; set; }
@@ -65,14 +65,15 @@ public class Car : MonoBehaviour
         Car_OnEdgeChanged(GraphGenerator.GetEdge(0));
         Debug.LogWarning($"Edge: {CurrentEdge.Index}");
 
-        Rigidbody.position = CurrentEdge.MidPoint;
         transform.rotation = Quaternion.Euler(CurrentEdge.EdgeDireciton);
         FixedUpdate();
+
+        Rigidbody.velocity = Vector3.zero;
     }
 
-    public void SetTrain(Train train)
+    public void SetTrainIndex(int index)
     {
-        Train = train;
+        this.Index = index;
     }
 
     protected virtual void FixedUpdate()
@@ -80,8 +81,8 @@ public class Car : MonoBehaviour
         dot = Vector3.Dot(Rigidbody.velocity, transform.forward);
         UpdateCarTransform();
 
-        Rigidbody.position = Vector3.Lerp(Rigidbody.position, wantedPosition, POSITION_LERP_SPEED * Time.fixedDeltaTime);
-        transform.rotation = Quaternion.Slerp(transform.rotation, wantedRotation, ROTATION_LERP_SPEED * Time.fixedDeltaTime);
+        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, wantedPosition, POSITION_LERP_SPEED * Time.fixedDeltaTime));
+        Rigidbody.MoveRotation(Quaternion.Slerp(transform.rotation, wantedRotation, ROTATION_LERP_SPEED * Time.fixedDeltaTime));
 
         if (!isSwitching && IsAtEndOfSpline())
             OnJunctionEnter?.Invoke();

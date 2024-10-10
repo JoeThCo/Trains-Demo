@@ -1,26 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-[RequireComponent(typeof(Engine))]
-[RequireComponent(typeof(Car))]
 public class Train : MonoBehaviour
 {
     public List<Car> Cars { get; private set; }
 
-    public delegate void CarChange();
+    public delegate void CarChange(Car car);
 
     public event CarChange CarAdded;
     public event CarChange CarRemoved;
 
     private void Start()
     {
-        Cars = GetConnectedCars();
+        Cars = GetComponentsInChildren<Car>().ToList();
+
+        foreach (Car car in Cars)
+            CarAdded?.Invoke(car);
 
         CarAdded += Train_CarAdded;
         CarRemoved += Train_CarRemoved;
 
-        InjectTrain();
+        //SetUpJoints();
     }
 
     private void OnDisable()
@@ -29,42 +31,41 @@ public class Train : MonoBehaviour
         CarRemoved -= Train_CarRemoved;
     }
 
-    private void Train_CarRemoved()
+    private void Train_CarRemoved(Car car)
     {
-        throw new System.NotImplementedException();
-    }
-
-    private void Train_CarAdded()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    void InjectTrain()
-    {
-        foreach (Car car in Cars)
-            car.SetTrain(this);
-    }
-
-    List<Car> GetConnectedCars()
-    {
-        List<Car> connectedCars = new List<Car>();
-
-        Car initialCar = GetComponent<Car>();
-        connectedCars.Add(initialCar);
-
-        ConfigurableJoint joint = GetComponent<ConfigurableJoint>();
-
-        while (joint && joint.connectedBody)
+        if (car && Cars.Contains(car))
         {
-            Car car = joint.connectedBody.GetComponent<Car>();
-            if (car)
-            {
-                connectedCars.Add(car);
-                joint = car.GetComponent<ConfigurableJoint>();
-            }
-            else
-                break;
+            Cars.Remove(car);
+            UpdateCarIndexes();
         }
-        return connectedCars;
+    }
+
+    private void Train_CarAdded(Car car)
+    {
+        if (car && !Cars.Contains(car))
+        {
+            Cars.Add(car);
+            UpdateCarIndexes();
+        }
+    }
+
+    private void UpdateCarIndexes()
+    {
+        for (int i = 0; i < Cars.Count; i++)
+            Cars[i].SetTrainIndex(i);
+    }
+
+    private void SetUpJoints()
+    {
+        Debug.Log(Cars.Count);
+        for (int i = 1; i < Cars.Count; i++)
+        {
+            Car current = Cars[i - 1];
+            Car behind = Cars[i];
+            ConfigurableJoint behindJoint = behind.GetComponent<ConfigurableJoint>();
+
+            behindJoint.connectedBody = current.Rigidbody;
+            behindJoint.connectedAnchor = current.Rigidbody.position + behindJoint.anchor;
+        }
     }
 }
