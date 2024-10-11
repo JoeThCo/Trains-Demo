@@ -37,7 +37,6 @@ public class Graph
 
         //edge connections
         EdgeConnectionMap = RemoveInvalidConnections(CreateEdgeDictionary(Edges));
-        /*
         foreach (KeyValuePair<Edge, List<Edge>> kvp in EdgeConnectionMap)
         {
             string output = string.Empty;
@@ -47,7 +46,6 @@ public class Graph
             }
             Debug.Log($"{kvp.Key.ToString()} | {output}");
         }
-        */
     }
 
     #region Nodes

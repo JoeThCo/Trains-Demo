@@ -8,20 +8,24 @@ using UnityEngine.Splines;
 [RequireComponent(typeof(Rigidbody))]
 public class Car : MonoBehaviour
 {
-
     public int Index { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
     public Edge CurrentEdge { get; private set; }
     private Spline CurrentSpline { get; set; }
 
-    private Vector3 wantedPosition;
-    private Quaternion wantedRotation;
+    public Vector3 WantedPosition { get; private set; }
+    public Quaternion WantedRotation { get; private set; }
 
+    [Header("Car")]
+    [Range(0, 500)][SerializeField] private int positionLerpSpeed = 15;
+    [Range(0, 500)][SerializeField] private int rotationLerpSpeed = 15;
+    
+    [Space(10)]
+    
     [SerializeField] private float gizmoLineDistance = 7.5f;
-    [Range(0, 500)][SerializeField] private int lerpSpeed = 15;
 
     private float t = 0;
-    private float dot = 0;
+    public float Dot { get; private set; }
 
     private bool isSwitching = false;
     private bool isForward = true;
@@ -79,11 +83,8 @@ public class Car : MonoBehaviour
 
     protected virtual void FixedUpdate()
     {
-        dot = Vector3.Dot(Rigidbody.velocity, transform.forward);
+        Dot = Vector3.Dot(Rigidbody.velocity, transform.forward);
         UpdateCarTransform();
-
-        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, wantedPosition, lerpSpeed * Time.fixedDeltaTime));
-        Rigidbody.MoveRotation(Quaternion.Slerp(transform.rotation, wantedRotation, lerpSpeed * Time.fixedDeltaTime));
 
         if (!isSwitching && IsAtEndOfSpline())
             OnJunctionEnter?.Invoke();
@@ -91,8 +92,11 @@ public class Car : MonoBehaviour
         if (isSwitching && !IsAtEndOfSpline())
             OnJunctionExit?.Invoke();
 
-        if ((isForward && dot < 0) || (!isForward && dot > 0))
+        if ((isForward && Dot < 0) || (!isForward && Dot > 0)) 
+        {
+            //Debug.Log($"isForwards Flipped! {isForward}");
             isForward = !isForward;
+        }
     }
 
     #region Events
@@ -118,13 +122,14 @@ public class Car : MonoBehaviour
             inputEdge = GraphGenerator.GetInverse(CurrentEdge);
         }
 
+        Debug.LogWarning($"In: {inputEdge}");
         Edge nextEdge = GraphGenerator.GetNextEdge(inputEdge);
         if (nextEdge == null)
         {
             OnDeadEnd?.Invoke();
             return;
         }
-
+        Debug.LogWarning($"In: {nextEdge}");
         OnEdgeChanged?.Invoke(nextEdge);
         UpdateCarTransform();
     }
@@ -142,19 +147,25 @@ public class Car : MonoBehaviour
         NativeSpline nativeSpline = new NativeSpline(CurrentSpline);
         SplineUtility.GetNearestPoint(nativeSpline, Rigidbody.position, out float3 nearestPoint, out float newT);
         t = Mathf.Clamp01(newT);
+        WantedPosition = (Vector3)nearestPoint;
 
-        wantedPosition = (Vector3)nearestPoint;
         Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
         Vector3 up = nativeSpline.EvaluateUpVector(t);
+        WantedRotation = isRotationBackwards ? Quaternion.LookRotation(-forward, up) : Quaternion.LookRotation(forward, up);
 
-        wantedRotation = isRotationBackwards ? Quaternion.LookRotation(-forward, up) : Quaternion.LookRotation(forward, up);
+        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, WantedPosition, positionLerpSpeed * Time.fixedDeltaTime));
+        Rigidbody.MoveRotation(Quaternion.Slerp(transform.rotation, WantedRotation, rotationLerpSpeed * Time.fixedDeltaTime));
 
-        Vector3 engineForward = wantedRotation * Vector3.forward;
-        if (dot < 0)
+        Rigidbody.velocity = Rigidbody.velocity.magnitude * GetEngineForward();
+    }
+
+    protected Vector3 GetEngineForward() 
+    {
+        Vector3 engineForward = WantedRotation * Vector3.forward;
+        if (Dot < 0)
             engineForward *= -1;
-        
-        Rigidbody.velocity = Rigidbody.velocity.magnitude * engineForward;
-        Debug.Log(Rigidbody.velocity.magnitude);
+
+        return engineForward;
     }
 
     private bool IsAtEndOfSpline()

@@ -6493,6 +6493,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Caboose
       objectReference: {fileID: 0}
+    - target: {fileID: 3282430684104706679, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4640811953665836793, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5952431534672184359, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: rotationLerpSpeed
       value: 15
@@ -6503,7 +6511,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -73.58
+      value: -72.42
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6511,7 +6519,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.61
+      value: -2.11
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalRotation.w
@@ -27926,9 +27934,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Car
       objectReference: {fileID: 0}
+    - target: {fileID: 3282430684104706679, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -79.01
+      value: -76.51
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.y
@@ -27936,7 +27948,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.76
+      value: 4.31
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalRotation.w
@@ -28188,6 +28200,10 @@ PrefabInstance:
       propertyPath: m_AutoConfigureConnectedAnchor
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1598528226492046542, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2655100060270168737, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: m_Damper
       value: 0
@@ -28326,19 +28342,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3894215016729278851, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: m_XDrive.positionDamper
-      value: 20
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3894215016729278851, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: m_YDrive.positionDamper
-      value: 20
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3894215016729278851, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: m_ZDrive.positionDamper
-      value: 20
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3894215016729278851, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: m_ConfiguredInWorldSpace
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3894215016729278851, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
+      propertyPath: m_SlerpDrive.positionDamper
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3894215016729278851, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: m_LinearLimit.contactDistance
@@ -28354,11 +28374,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7004931915689115016, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: accleration
-      value: 25
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 7004931915689115016, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: positionLerpSpeed
-      value: 250
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 7004931915689115016, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: rotationLerpSpeed

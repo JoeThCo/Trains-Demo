@@ -5,6 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class Engine : Car
 {
+    [Header("Engine")]
     [Range(1, 25)][SerializeField] private int accleration = 10;
     [Range(0, 100)][SerializeField] private int maxSpeed = 25;
 
@@ -33,8 +34,6 @@ public class Engine : Car
         base.FixedUpdate();
 
         if (Rigidbody.velocity.magnitude > maxSpeed)
-        {
             Rigidbody.velocity = Rigidbody.velocity.normalized * maxSpeed;
-        }
     }
 }
