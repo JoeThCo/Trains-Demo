@@ -8,6 +8,7 @@ using UnityEngine.Splines;
 [RequireComponent(typeof(Rigidbody))]
 public class Car : MonoBehaviour
 {
+
     public int Index { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
     public Edge CurrentEdge { get; private set; }
@@ -17,6 +18,7 @@ public class Car : MonoBehaviour
     private Quaternion wantedRotation;
 
     [SerializeField] private float gizmoLineDistance = 7.5f;
+    [Range(0, 500)][SerializeField] private int lerpSpeed = 15;
 
     private float t = 0;
     private float dot = 0;
@@ -27,9 +29,6 @@ public class Car : MonoBehaviour
 
     private const float ENTER_EPSILON = .005f;
 
-    private const int POSITION_LERP_SPEED = 20;
-    private const int ROTATION_LERP_SPEED = 15;
-
     public delegate void EdgeChanged(Edge edge);
     public delegate void JunctionAction();
 
@@ -37,6 +36,8 @@ public class Car : MonoBehaviour
     public event JunctionAction OnJunctionEnter;
     public event JunctionAction OnJunctionExit;
     public event JunctionAction OnDeadEnd;
+
+    private const int LERP_SPEED = 250;
 
     private void Start()
     {
@@ -81,8 +82,8 @@ public class Car : MonoBehaviour
         dot = Vector3.Dot(Rigidbody.velocity, transform.forward);
         UpdateCarTransform();
 
-        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, wantedPosition, POSITION_LERP_SPEED * Time.fixedDeltaTime));
-        Rigidbody.MoveRotation(Quaternion.Slerp(transform.rotation, wantedRotation, ROTATION_LERP_SPEED * Time.fixedDeltaTime));
+        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, wantedPosition, lerpSpeed * Time.fixedDeltaTime));
+        Rigidbody.MoveRotation(Quaternion.Slerp(transform.rotation, wantedRotation, lerpSpeed * Time.fixedDeltaTime));
 
         if (!isSwitching && IsAtEndOfSpline())
             OnJunctionEnter?.Invoke();
@@ -151,7 +152,9 @@ public class Car : MonoBehaviour
         Vector3 engineForward = wantedRotation * Vector3.forward;
         if (dot < 0)
             engineForward *= -1;
+        
         Rigidbody.velocity = Rigidbody.velocity.magnitude * engineForward;
+        Debug.Log(Rigidbody.velocity.magnitude);
     }
 
     private bool IsAtEndOfSpline()

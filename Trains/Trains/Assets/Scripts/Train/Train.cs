@@ -22,7 +22,7 @@ public class Train : MonoBehaviour
         CarAdded += Train_CarAdded;
         CarRemoved += Train_CarRemoved;
 
-        //SetUpJoints();
+        SetUpJoints();
     }
 
     private void OnDisable()
@@ -62,10 +62,9 @@ public class Train : MonoBehaviour
         {
             Car current = Cars[i - 1];
             Car behind = Cars[i];
-            ConfigurableJoint behindJoint = behind.GetComponent<ConfigurableJoint>();
 
+            ConfigurableJoint behindJoint = behind.GetComponent<ConfigurableJoint>();
             behindJoint.connectedBody = current.Rigidbody;
-            behindJoint.connectedAnchor = current.Rigidbody.position + behindJoint.anchor;
         }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class Engine : Car
 {
-    [Range(-10, 10)][SerializeField] private int accleration = 0;
+    [Range(1, 25)][SerializeField] private int accleration = 10;
     [Range(0, 100)][SerializeField] private int maxSpeed = 25;
 
     protected override void CarInit()
