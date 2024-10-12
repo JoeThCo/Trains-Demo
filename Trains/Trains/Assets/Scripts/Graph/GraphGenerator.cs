@@ -312,7 +312,8 @@ public class GraphGenerator : MonoBehaviour
 
     public static Edge GetInverse(Edge edge)
     {
-        return Graph.Edges[edge.InverseIndex];
+        //todo replace this with a map if it becomes a problem (O(n))
+        return Graph.Edges.FirstOrDefault(e => e.FromNode.Index == edge.ToNode.Index && e.ToNode.Index == edge.FromNode.Index);
     }
 
     public static Edge[] GetConnections(Edge edge)
@@ -325,15 +326,15 @@ public class GraphGenerator : MonoBehaviour
 
     public static Edge GetNextEdge(Edge edge)
     {
-        //Debug.LogWarning($"In {edge}");
+        Debug.LogWarning($"In {edge.Index} {edge}");
         Edge[] result = GetConnections(edge);
         if (result == null) return null;
-        //foreach (Edge mapEdges in result)
-        //Debug.LogError(mapEdges);
+        foreach (Edge mapEdges in result)
+            Debug.LogError(mapEdges);
 
         int randomIndex = Graph.Random.Next(0, result.Length);
         Edge outputEdge = result[randomIndex];
-        //Debug.LogWarning($"Out {outputEdge}");
+        Debug.LogWarning($"Out {outputEdge.Index} {outputEdge}");
         return outputEdge;
     }
     #endregion

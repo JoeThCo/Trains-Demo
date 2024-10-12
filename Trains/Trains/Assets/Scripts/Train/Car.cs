@@ -19,9 +19,9 @@ public class Car : MonoBehaviour
     [Header("Car")]
     [Range(0, 500)][SerializeField] private int positionLerpSpeed = 15;
     [Range(0, 500)][SerializeField] private int rotationLerpSpeed = 15;
-    
+
     [Space(10)]
-    
+
     [SerializeField] private float gizmoLineDistance = 7.5f;
 
     private float t = 0;
@@ -68,7 +68,7 @@ public class Car : MonoBehaviour
         Rigidbody = GetComponent<Rigidbody>();
 
         Car_OnEdgeChanged(GraphGenerator.GetEdge(0));
-        Debug.LogWarning($"Edge: {CurrentEdge.Index}");
+        //Debug.LogWarning($"Edge: {CurrentEdge.Index}");
 
         transform.rotation = Quaternion.Euler(CurrentEdge.EdgeDireciton);
         FixedUpdate();
@@ -92,9 +92,8 @@ public class Car : MonoBehaviour
         if (isSwitching && !IsAtEndOfSpline())
             OnJunctionExit?.Invoke();
 
-        if ((isForward && Dot < 0) || (!isForward && Dot > 0)) 
+        if ((isForward && Dot < 0) || (!isForward && Dot > 0))
         {
-            //Debug.Log($"isForwards Flipped! {isForward}");
             isForward = !isForward;
         }
     }
@@ -113,23 +112,23 @@ public class Car : MonoBehaviour
     private void Car_OnJunctionEnter()
     {
         isSwitching = true;
-        Edge inputEdge = CurrentEdge;
+        Edge inputEdge = !isForward && !isRotationBackwards || isForward && isRotationBackwards
+            ? GraphGenerator.GetInverse(CurrentEdge)
+            : CurrentEdge;
 
-        if (!isForward && !isRotationBackwards || isForward && isRotationBackwards)
+        if (inputEdge != CurrentEdge)
         {
             Debug.Log($"isRotationBackwards Flipped! {isRotationBackwards}");
             isRotationBackwards = !isRotationBackwards;
-            inputEdge = GraphGenerator.GetInverse(CurrentEdge);
         }
 
-        Debug.LogWarning($"In: {inputEdge}");
         Edge nextEdge = GraphGenerator.GetNextEdge(inputEdge);
         if (nextEdge == null)
         {
             OnDeadEnd?.Invoke();
             return;
         }
-        Debug.LogWarning($"In: {nextEdge}");
+
         OnEdgeChanged?.Invoke(nextEdge);
         UpdateCarTransform();
     }
@@ -159,13 +158,9 @@ public class Car : MonoBehaviour
         Rigidbody.velocity = Rigidbody.velocity.magnitude * GetEngineForward();
     }
 
-    protected Vector3 GetEngineForward() 
+    protected Vector3 GetEngineForward()
     {
-        Vector3 engineForward = WantedRotation * Vector3.forward;
-        if (Dot < 0)
-            engineForward *= -1;
-
-        return engineForward;
+        return (Dot < 0) ? WantedRotation * Vector3.back : WantedRotation * Vector3.forward;
     }
 
     private bool IsAtEndOfSpline()

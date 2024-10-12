@@ -57,7 +57,7 @@ public class Train : MonoBehaviour
 
     private void SetUpJoints()
     {
-        Debug.Log(Cars.Count);
+        //Debug.Log(Cars.Count);
         for (int i = 1; i < Cars.Count; i++)
         {
             Car current = Cars[i - 1];

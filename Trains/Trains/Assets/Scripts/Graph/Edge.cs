@@ -6,7 +6,6 @@ using UnityEngine.Splines;
 public class Edge
 {
     public int Index { get; private set; }
-    public int InverseIndex { get; private set; }
     public Node FromNode { get; private set; }
     public Node ToNode { get; private set; }
     public float Weight { get; private set; }
@@ -26,8 +25,6 @@ public class Edge
 
         EdgeDireciton = (FromNode.Position - ToNode.Position).normalized;
         Weight = Vector3.Distance(FromNode.Position, ToNode.Position);
-
-        InverseIndex = fromNode.Index < toNode.Index ? Index + 1 : Index - 1;
     }
 
     public float GetDot(Edge otherEdge)
