@@ -1,3 +1,4 @@
+using Shapes;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -78,7 +79,7 @@ public class GraphGenerator : MonoBehaviour
         }
     }
 
-    public void RoundBezierKnots() 
+    public void RoundBezierKnots()
     {
         InputSplineContainer = GetComponent<SplineContainer>();
 
@@ -330,7 +331,7 @@ public class GraphGenerator : MonoBehaviour
         Edge[] result = GetConnections(edge);
         if (result == null) return null;
         //foreach (Edge mapEdges in result)
-            //Debug.LogError(mapEdges);
+        //Debug.LogError(mapEdges);
 
         int randomIndex = Graph.Random.Next(0, result.Length);
         Edge outputEdge = result[randomIndex];
