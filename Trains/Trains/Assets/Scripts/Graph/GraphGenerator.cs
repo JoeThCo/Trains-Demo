@@ -326,15 +326,15 @@ public class GraphGenerator : MonoBehaviour
 
     public static Edge GetNextEdge(Edge edge)
     {
-        Debug.LogWarning($"In {edge.Index} {edge}");
+        //Debug.LogWarning($"In {edge.Index} {edge}");
         Edge[] result = GetConnections(edge);
         if (result == null) return null;
-        foreach (Edge mapEdges in result)
-            Debug.LogError(mapEdges);
+        //foreach (Edge mapEdges in result)
+            //Debug.LogError(mapEdges);
 
         int randomIndex = Graph.Random.Next(0, result.Length);
         Edge outputEdge = result[randomIndex];
-        Debug.LogWarning($"Out {outputEdge.Index} {outputEdge}");
+        //Debug.LogWarning($"Out {outputEdge.Index} {outputEdge}");
         return outputEdge;
     }
     #endregion

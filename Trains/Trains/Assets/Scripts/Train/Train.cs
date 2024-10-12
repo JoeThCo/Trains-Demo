@@ -6,6 +6,7 @@ using UnityEngine;
 public class Train : MonoBehaviour
 {
     public List<Car> Cars { get; private set; }
+    public int Size { get { return Cars.Count; } }
 
     public delegate void CarChange(Car car);
 
@@ -14,15 +15,20 @@ public class Train : MonoBehaviour
 
     private void Start()
     {
-        Cars = GetComponentsInChildren<Car>().ToList();
-
-        foreach (Car car in Cars)
-            CarAdded?.Invoke(car);
+        Cars = new List<Car>();
 
         CarAdded += Train_CarAdded;
         CarRemoved += Train_CarRemoved;
 
+        foreach (Transform t in transform)
+        {
+            Car car = t.GetComponent<Car>();
+            if (car)
+                CarAdded?.Invoke(car);
+        }
+
         SetUpJoints();
+        CarInfoInit();
     }
 
     private void OnDisable()
@@ -31,25 +37,33 @@ public class Train : MonoBehaviour
         CarRemoved -= Train_CarRemoved;
     }
 
-    private void Train_CarRemoved(Car car)
-    {
-        if (car && Cars.Contains(car))
-        {
-            Cars.Remove(car);
-            UpdateCarIndexes();
-        }
-    }
-
+    #region Events
     private void Train_CarAdded(Car car)
     {
         if (car && !Cars.Contains(car))
         {
             Cars.Add(car);
-            UpdateCarIndexes();
+            UpdateCarIndex();
         }
     }
 
-    private void UpdateCarIndexes()
+    private void Train_CarRemoved(Car car)
+    {
+        if (car && Cars.Contains(car))
+        {
+            Cars.Remove(car);
+            UpdateCarIndex();
+        }
+    }
+    #endregion
+
+    private void CarInfoInit()
+    {
+        for (int i = 0; i < Cars.Count; i++)
+            Cars[i].SetTrain(this);
+    }
+
+    private void UpdateCarIndex()
     {
         for (int i = 0; i < Cars.Count; i++)
             Cars[i].SetTrainIndex(i);

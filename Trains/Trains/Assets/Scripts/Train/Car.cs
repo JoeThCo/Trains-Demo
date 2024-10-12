@@ -8,13 +8,14 @@ using UnityEngine.Splines;
 [RequireComponent(typeof(Rigidbody))]
 public class Car : MonoBehaviour
 {
-    public int Index { get; private set; }
     public Rigidbody Rigidbody { get; private set; }
     public Edge CurrentEdge { get; private set; }
     private Spline CurrentSpline { get; set; }
-
     public Vector3 WantedPosition { get; private set; }
     public Quaternion WantedRotation { get; private set; }
+
+    public Train Train { get; private set; }
+    public int Index { get; private set; }
 
     [Header("Car")]
     [Range(0, 500)][SerializeField] private int positionLerpSpeed = 15;
@@ -76,6 +77,11 @@ public class Car : MonoBehaviour
         Rigidbody.velocity = Vector3.zero;
     }
 
+    public void SetTrain(Train train)
+    {
+        this.Train = train;
+    }
+
     public void SetTrainIndex(int index)
     {
         this.Index = index;
@@ -99,30 +105,36 @@ public class Car : MonoBehaviour
     }
 
     #region Events
-    private void Car_OnDeadEnd()
-    {
-        Rigidbody.velocity = Vector3.zero;
-    }
-
-    private void Car_OnJunctionExit()
-    {
-        isSwitching = false;
-    }
-
     private void Car_OnJunctionEnter()
     {
         isSwitching = true;
-        Edge inputEdge = !isForward && !isRotationBackwards || isForward && isRotationBackwards
-            ? GraphGenerator.GetInverse(CurrentEdge)
-            : CurrentEdge;
+        Edge inputEdge = CurrentEdge;
+        Edge nextEdge = null;
 
-        if (inputEdge != CurrentEdge)
+        Debug.Log($"Index Entered {Index}");
+
+        // Only the leading car or caboose chooses the direction
+        if ((Index == 0 && isForward) || (Index == Train.Size - 1 && !isForward))
         {
-            Debug.Log($"isRotationBackwards Flipped! {isRotationBackwards}");
-            isRotationBackwards = !isRotationBackwards;
+            bool shouldFlip = (!isForward && !isRotationBackwards) || (isForward && isRotationBackwards);
+            inputEdge = shouldFlip ? GraphGenerator.GetInverse(CurrentEdge) : CurrentEdge;
+
+            if (shouldFlip)
+            {
+                Debug.Log($"isRotationBackwards Flipped! {isRotationBackwards}");
+                isRotationBackwards = !isRotationBackwards;
+            }
+
+            nextEdge = GraphGenerator.GetNextEdge(inputEdge);
+        }
+        // Other cars follow
+        else
+        {
+            int adjacentCarIndex = isForward ? Index - 1 : Index + 1;
+            nextEdge = Train.Cars[adjacentCarIndex].CurrentEdge;
+            isRotationBackwards = Train.Cars[adjacentCarIndex].isRotationBackwards;
         }
 
-        Edge nextEdge = GraphGenerator.GetNextEdge(inputEdge);
         if (nextEdge == null)
         {
             OnDeadEnd?.Invoke();
@@ -133,10 +145,20 @@ public class Car : MonoBehaviour
         UpdateCarTransform();
     }
 
+    private void Car_OnJunctionExit()
+    {
+        isSwitching = false;
+    }
+
     private void Car_OnEdgeChanged(Edge edge)
     {
         CurrentEdge = edge;
         CurrentSpline = GraphGenerator.GetSpline(CurrentEdge);
+    }
+
+    private void Car_OnDeadEnd()
+    {
+        Rigidbody.velocity = Vector3.zero;
     }
     #endregion
 
