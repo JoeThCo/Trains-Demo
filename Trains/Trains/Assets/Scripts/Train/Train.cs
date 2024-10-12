@@ -71,7 +71,6 @@ public class Train : MonoBehaviour
 
     private void SetUpJoints()
     {
-        //Debug.Log(Cars.Count);
         for (int i = 1; i < Cars.Count; i++)
         {
             Car current = Cars[i - 1];
@@ -79,6 +78,10 @@ public class Train : MonoBehaviour
 
             ConfigurableJoint behindJoint = behind.GetComponent<ConfigurableJoint>();
             behindJoint.connectedBody = current.Rigidbody;
+
+            //maybe needed if we spawn stuff in?
+            behindJoint.anchor = Vector3.zero + Vector3.back * 2.5f;
+            behindJoint.connectedAnchor = Vector3.zero + Vector3.forward * 2.5f;
         }
     }
 }
