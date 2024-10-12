@@ -16,6 +16,9 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
     [SerializeField][Range(0.1f, 2.5f)] private float railDistance = 1;
     [SerializeField][Range(0.1f, 2.5f)] private float sleeperDistance = 1;
     [Space(10)]
+    [SerializeField][Range(0.1f, 5f)] private float closedSplineInExtraDistance = 1;
+    [SerializeField][Range(0.1f, 5f)] private float closedSplineOutExtraDistance = 1;
+    [Space(10)]
     [SerializeField] private Color railColor;
     [SerializeField] private Color sleeperColor;
 
@@ -47,43 +50,52 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
         float splineLength = spline.GetLength();
         int numberOfSleepers = Mathf.FloorToInt(splineLength / sleeperDistance);
 
-        using (var pathLeft = new PolylinePath())
-        using (var pathRight = new PolylinePath())
+        using (PolylinePath pathLeft = new PolylinePath())
+        using (PolylinePath pathRight = new PolylinePath())
         {
-            Vector3 firstLeftPoint = Vector3.zero;
-            Vector3 firstRightPoint = Vector3.zero;
-
             for (int i = 0; i <= resolution; i++)
             {
+                if (spline.Closed && i <= 0 || i >= resolution) continue;
+
                 float t = CalculateTForSegment(i, splineLength, (int)resolution);
                 Vector3 pointOnSpline = spline.EvaluatePosition(t);
-                Vector3 normal = CalculateNormalAtPoint(spline, t);
+                Vector3 tangent = spline.EvaluateTangent(t);
+                Vector3 normal = Vector3.Cross(tangent, Vector3.up).normalized;
+
                 pointOnSpline.y = pointOnSpline.y + yOffset;
 
                 Vector3 leftPoint = pointOnSpline + normal * railDistance;
                 Vector3 rightPoint = pointOnSpline - normal * railDistance;
 
-                // Store the first points to connect at the end if the spline is closed
-                if (i == 0)
+                // If `i == 1` or `i == resolution - 1`, extend in the opposite direction
+                if (spline.Closed)
                 {
-                    firstLeftPoint = leftPoint;
-                    firstRightPoint = rightPoint;
+                    Vector3 oppositeTangent = -tangent.normalized * sleeperDistance;
+                    Vector3 backLeftPoint = leftPoint;
+                    Vector3 backRightPoint = rightPoint;
+
+                    if (i == 1)
+                    {
+                        leftPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
+                        rightPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
+                    }
+
+                    if (i == resolution - 1)
+                    {
+                        leftPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
+                        rightPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
+                    }
                 }
 
                 pathLeft.AddPoint(leftPoint);
                 pathRight.AddPoint(rightPoint);
             }
 
-            // If the spline is closed, add the first points at the end to loop
-            if (spline.Closed)
-            {
+            // Draw the left and right rails
+            Draw.Polyline(pathLeft, false, railColor);
+            Draw.Polyline(pathRight, false, railColor);
 
-            }
-
-
-            Draw.Polyline(pathLeft, spline.Closed, railColor);
-            Draw.Polyline(pathRight, spline.Closed, railColor);
-
+            // Draw sleepers
             for (int i = 0; i <= numberOfSleepers; i++)
             {
                 float sleeperT = CalculateTForSegment(i, splineLength, numberOfSleepers);
@@ -91,6 +103,7 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
             }
         }
     }
+
 
     private float CalculateTForSegment(int index, float splineLength, int segments)
     {

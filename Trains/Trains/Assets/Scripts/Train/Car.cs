@@ -20,9 +20,7 @@ public class Car : MonoBehaviour
     [Header("Car")]
     [Range(0, 500)][SerializeField] private int positionLerpSpeed = 15;
     [Range(0, 500)][SerializeField] private int rotationLerpSpeed = 15;
-
     [Space(10)]
-
     [SerializeField] private float gizmoLineDistance = 7.5f;
 
     private float t = 0;
@@ -32,7 +30,7 @@ public class Car : MonoBehaviour
     private bool isForward = true;
     private bool isRotationBackwards = false;
 
-    private const float ENTER_EPSILON = .005f;
+    public const float JUNCTION_EPSILON = .005f;
 
     public delegate void EdgeChanged(Edge edge);
     public delegate void JunctionAction();
@@ -187,7 +185,7 @@ public class Car : MonoBehaviour
 
     private bool IsAtEndOfSpline()
     {
-        return t <= 0 + ENTER_EPSILON || t >= 1 - ENTER_EPSILON;
+        return t <= 0 + JUNCTION_EPSILON || t >= 1 - JUNCTION_EPSILON;
     }
     #endregion
 
