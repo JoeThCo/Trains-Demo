@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Splines;
 
-[ExecuteAlways]
 public class TrainTrackDrawer : ImmediateModeShapeDrawer
 {
     [SerializeField] private SplineContainer splineContainer;
@@ -14,7 +13,9 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
     [SerializeField][Range(.01f, 1f)] private float thickness = 256;
     [Space(10)]
     [SerializeField][Range(0.1f, 2.5f)] private float railDistance = 1;
+    [Space(10)]
     [SerializeField][Range(0.1f, 2.5f)] private float sleeperDistance = 1;
+    [SerializeField][Range(0.1f, 2.5f)] private float sleeperLength = 1;
     [Space(10)]
     [SerializeField][Range(0.1f, 5f)] private float closedSplineInExtraDistance = 1;
     [SerializeField][Range(0.1f, 5f)] private float closedSplineOutExtraDistance = 1;
@@ -22,12 +23,20 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
     [SerializeField] private Color railColor;
     [SerializeField] private Color sleeperColor;
 
+    private void Start()
+    {
+        DrawShapes(Camera.main);
+        Debug.Log(SystemInfo.supportsInstancing);
+    }
+
     public override void DrawShapes(Camera cam)
     {
         if (splineContainer == null)
             splineContainer = GetComponentInChildren<SplineContainer>();
 
-        using (Draw.Command(cam))
+        if (cam == null) return;
+
+        using (Draw.Command(cam, UnityEngine.Rendering.CameraEvent.BeforeDepthTexture))
         {
             // Set up line drawing parameters
             Draw.LineGeometry = LineGeometry.Volumetric3D;
@@ -67,24 +76,20 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
                 Vector3 leftPoint = pointOnSpline + normal * railDistance;
                 Vector3 rightPoint = pointOnSpline - normal * railDistance;
 
-                // If `i == 1` or `i == resolution - 1`, extend in the opposite direction
-                if (spline.Closed)
+                Vector3 oppositeTangent = -tangent.normalized * sleeperDistance;
+                Vector3 backLeftPoint = leftPoint;
+                Vector3 backRightPoint = rightPoint;
+
+                if (i == 1)
                 {
-                    Vector3 oppositeTangent = -tangent.normalized * sleeperDistance;
-                    Vector3 backLeftPoint = leftPoint;
-                    Vector3 backRightPoint = rightPoint;
+                    leftPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
+                    rightPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
+                }
 
-                    if (i == 1)
-                    {
-                        leftPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
-                        rightPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
-                    }
-
-                    if (i == resolution - 1)
-                    {
-                        leftPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
-                        rightPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
-                    }
+                if (i == resolution - 1)
+                {
+                    leftPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
+                    rightPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
                 }
 
                 pathLeft.AddPoint(leftPoint);
@@ -94,13 +99,13 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
             // Draw the left and right rails
             Draw.Polyline(pathLeft, false, railColor);
             Draw.Polyline(pathRight, false, railColor);
+        }
 
-            // Draw sleepers
-            for (int i = 0; i <= numberOfSleepers; i++)
-            {
-                float sleeperT = CalculateTForSegment(i, splineLength, numberOfSleepers);
-                DrawSleeperAtPosition(spline, sleeperT, railDistance, sleeperDistance);
-            }
+        // Draw sleepers
+        for (int i = 0; i <= numberOfSleepers; i++)
+        {
+            float sleeperT = CalculateTForSegment(i, splineLength, numberOfSleepers);
+            DrawSleeperAtPosition(spline, sleeperT, railDistance, sleeperLength);
         }
     }
 

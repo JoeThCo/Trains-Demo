@@ -32,6 +32,7 @@ public class GraphGenerator : MonoBehaviour
 
     public void CreateGraph()
     {
+        Debug.Log(SystemInfo.supportsInstancing);
         ResetGraph();
 
         InputSplineContainer = GetComponent<SplineContainer>();

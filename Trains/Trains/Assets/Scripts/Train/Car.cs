@@ -69,8 +69,10 @@ public class Car : MonoBehaviour
         Car_OnEdgeChanged(GraphGenerator.GetEdge(0));
         //Debug.LogWarning($"Edge: {CurrentEdge.Index}");
 
-        transform.rotation = Quaternion.Euler(CurrentEdge.EdgeDireciton);
         FixedUpdate();
+
+        Rigidbody.MovePosition(WantedPosition);
+        Rigidbody.MoveRotation(WantedRotation);
 
         Rigidbody.velocity = Vector3.zero;
     }

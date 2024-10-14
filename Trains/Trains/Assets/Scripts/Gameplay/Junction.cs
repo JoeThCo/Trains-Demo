@@ -9,6 +9,12 @@ public class Junction : MonoBehaviour
     [SerializeField] private MeshRenderer debugMeshRenderer;
     public Node Node { get; private set; }
 
+    private void Start()
+    {
+        debugText.gameObject.SetActive(false);
+        debugMeshRenderer.gameObject.SetActive(false);
+    }
+
     public void JunctionInit(Node node)
     {
         Node = node;

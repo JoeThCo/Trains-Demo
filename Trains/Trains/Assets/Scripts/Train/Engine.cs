@@ -32,4 +32,9 @@ public class Engine : Car
         if (Rigidbody.velocity.magnitude > maxSpeed)
             Rigidbody.velocity = Rigidbody.velocity.normalized * maxSpeed;
     }
+
+    public string GetSpeedText()
+    {
+        return $"Speed: {(int)Rigidbody.velocity.magnitude} mph\nMax {(int)maxSpeed} mph";
+    }
 }
