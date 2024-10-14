@@ -1,4 +1,3 @@
-using Shapes;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -32,8 +31,9 @@ public class GraphGenerator : MonoBehaviour
 
     public void CreateGraph()
     {
-        Debug.Log(SystemInfo.supportsInstancing);
         ResetGraph();
+
+        //GetComponent<TrainTrackDrawer>().DrawShapes(Camera.current);
 
         InputSplineContainer = GetComponent<SplineContainer>();
         Graph = new Graph(InputSplineContainer);

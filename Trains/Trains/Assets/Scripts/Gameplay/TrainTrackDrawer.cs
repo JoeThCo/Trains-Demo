@@ -1,13 +1,12 @@
-using Shapes;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Splines;
 
+/*
+[ExecuteAlways]
 public class TrainTrackDrawer : ImmediateModeShapeDrawer
 {
-    [SerializeField] private SplineContainer splineContainer;
-    [Space(10)]
     [SerializeField][Range(-5f, 5f)] private float yOffset = 0f;
     [SerializeField][Range(8, 128)] private float resolution = 75;
     [SerializeField][Range(.01f, 1f)] private float thickness = 256;
@@ -23,11 +22,7 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
     [SerializeField] private Color railColor;
     [SerializeField] private Color sleeperColor;
 
-    private void Start()
-    {
-        DrawShapes(Camera.main);
-        Debug.Log(SystemInfo.supportsInstancing);
-    }
+    private SplineContainer splineContainer;
 
     public override void DrawShapes(Camera cam)
     {
@@ -137,3 +132,4 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
         Draw.Line(midpoint - direction, midpoint + direction, sleeperColor);
     }
 }
+*/
