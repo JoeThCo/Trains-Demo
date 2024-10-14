@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blendMode: 1
-  scaleMode: 0
+  scaleMode: 1
   color: {r: 1, g: 1, b: 1, a: 1}
   detailLevel: 2
   renderQueue: -1
@@ -60,18 +60,9 @@ MonoBehaviour:
   stencilRefID: 0
   stencilReadMask: 255
   stencilWriteMask: 255
-  points:
-  - point: {x: 0, y: 1, z: 0}
-    color: {r: 1, g: 1, b: 1, a: 1}
-    thickness: 1
-  - point: {x: 0.8660254, y: -0.5, z: 0}
-    color: {r: 1, g: 1, b: 1, a: 1}
-    thickness: 1
-  - point: {x: -0.8660254, y: -0.5, z: 0}
-    color: {r: 1, g: 1, b: 1, a: 1}
-    thickness: 1
-  geometry: 0
-  joins: 1
+  points: []
+  geometry: 1
+  joins: 0
   closed: 0
   thickness: 0.125
   thicknessSpace: 0
@@ -103,7 +94,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 34fc5346917eea54aba37bcbe8ff730a, type: 2}
+  - {fileID: 2100000, guid: c04bf28165f749943b0470ef66540f5b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

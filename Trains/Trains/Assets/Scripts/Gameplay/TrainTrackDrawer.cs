@@ -2,10 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Splines;
+using Shapes;
 
-/*
-[ExecuteAlways]
-public class TrainTrackDrawer : ImmediateModeShapeDrawer
+public class TrainTrackDrawer : MonoBehaviour
 {
     [SerializeField][Range(-5f, 5f)] private float yOffset = 0f;
     [SerializeField][Range(8, 128)] private float resolution = 75;
@@ -22,30 +21,38 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
     [SerializeField] private Color railColor;
     [SerializeField] private Color sleeperColor;
 
+    [SerializeField] private Polyline railPrefab;
+    [SerializeField] private Line sleeperPrefab;
+
     private SplineContainer splineContainer;
 
-    public override void DrawShapes(Camera cam)
+    private GameObject trackParent;
+    private GameObject sleepersParent;
+    private GameObject railsParent;
+
+    public void DrawTracksAndSleepers()
     {
         if (splineContainer == null)
-            splineContainer = GetComponentInChildren<SplineContainer>();
+            splineContainer = GetComponent<SplineContainer>();
 
-        if (cam == null) return;
-
-        using (Draw.Command(cam, UnityEngine.Rendering.CameraEvent.BeforeDepthTexture))
+        if (trackParent == null)
         {
-            // Set up line drawing parameters
-            Draw.LineGeometry = LineGeometry.Volumetric3D;
-            Draw.ThicknessSpace = ThicknessSpace.Meters;
-            Draw.Thickness = thickness;
+            trackParent = new GameObject("Track Parent");
+            trackParent.transform.parent = transform;
+        }
 
-            // Set the matrix to draw in world space
-            Draw.Matrix = Matrix4x4.identity;
+        // Set up line drawing parameters
+        Draw.LineGeometry = LineGeometry.Volumetric3D;
+        Draw.ThicknessSpace = ThicknessSpace.Meters;
+        Draw.Thickness = thickness;
 
-            for (int i = 0; i < splineContainer.Splines.Count; i++)
-            {
-                Spline spline = splineContainer.Splines[i];
-                RenderSpline(spline);
-            }
+        // Set the matrix to draw in world space
+        Draw.Matrix = Matrix4x4.identity;
+
+        for (int i = 0; i < splineContainer.Splines.Count; i++)
+        {
+            Spline spline = splineContainer.Splines[i];
+            RenderSpline(spline);
         }
     }
 
@@ -54,56 +61,78 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
         float splineLength = spline.GetLength();
         int numberOfSleepers = Mathf.FloorToInt(splineLength / sleeperDistance);
 
-        using (PolylinePath pathLeft = new PolylinePath())
-        using (PolylinePath pathRight = new PolylinePath())
+        GameObject rails = new GameObject("Rails");
+        rails.transform.parent = trackParent.transform;
+
+        Polyline leftRail = Instantiate(railPrefab, Vector3.up * yOffset, Quaternion.identity, rails.transform);
+        leftRail.Color = railColor;
+        leftRail.Thickness = thickness;
+
+        Polyline rightRail = Instantiate(railPrefab, Vector3.up * yOffset, Quaternion.identity, rails.transform);
+        rightRail.Color = railColor;
+        rightRail.Thickness = thickness;
+
+        for (int i = 0; i <= resolution; i++)
         {
-            for (int i = 0; i <= resolution; i++)
+            if (spline.Closed && i <= 0 || i >= resolution) continue;
+
+            float t = CalculateTForSegment(i, splineLength, (int)resolution);
+            Vector3 pointOnSpline = spline.EvaluatePosition(t);
+            Vector3 tangent = spline.EvaluateTangent(t);
+            Vector3 normal = Vector3.Cross(tangent, Vector3.up).normalized;
+
+            pointOnSpline.y = pointOnSpline.y + yOffset;
+
+            Vector3 leftPoint = pointOnSpline + normal * railDistance;
+            Vector3 rightPoint = pointOnSpline - normal * railDistance;
+
+            Vector3 oppositeTangent = -tangent.normalized * sleeperDistance;
+            Vector3 backLeftPoint = leftPoint;
+            Vector3 backRightPoint = rightPoint;
+
+            if (i == 1)
             {
-                if (spline.Closed && i <= 0 || i >= resolution) continue;
-
-                float t = CalculateTForSegment(i, splineLength, (int)resolution);
-                Vector3 pointOnSpline = spline.EvaluatePosition(t);
-                Vector3 tangent = spline.EvaluateTangent(t);
-                Vector3 normal = Vector3.Cross(tangent, Vector3.up).normalized;
-
-                pointOnSpline.y = pointOnSpline.y + yOffset;
-
-                Vector3 leftPoint = pointOnSpline + normal * railDistance;
-                Vector3 rightPoint = pointOnSpline - normal * railDistance;
-
-                Vector3 oppositeTangent = -tangent.normalized * sleeperDistance;
-                Vector3 backLeftPoint = leftPoint;
-                Vector3 backRightPoint = rightPoint;
-
-                if (i == 1)
-                {
-                    leftPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
-                    rightPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
-                }
-
-                if (i == resolution - 1)
-                {
-                    leftPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
-                    rightPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
-                }
-
-                pathLeft.AddPoint(leftPoint);
-                pathRight.AddPoint(rightPoint);
+                leftPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
+                rightPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
             }
 
-            // Draw the left and right rails
-            Draw.Polyline(pathLeft, false, railColor);
-            Draw.Polyline(pathRight, false, railColor);
+            if (i == resolution - 1)
+            {
+                leftPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
+                rightPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
+            }
+
+            leftRail.AddPoint(leftPoint);
+            rightRail.AddPoint(rightPoint);
         }
+
+        sleepersParent = new GameObject("Sleeprs");
+        sleepersParent.transform.parent = trackParent.transform;
 
         // Draw sleepers
         for (int i = 0; i <= numberOfSleepers; i++)
         {
             float sleeperT = CalculateTForSegment(i, splineLength, numberOfSleepers);
-            DrawSleeperAtPosition(spline, sleeperT, railDistance, sleeperLength);
+
+            Vector3 pointOnSpline = spline.EvaluatePosition(sleeperT);
+            pointOnSpline.y = pointOnSpline.y + yOffset;
+
+            Vector3 normal = CalculateNormalAtPoint(spline, sleeperT);
+
+            Vector3 leftPoint = pointOnSpline + normal * sleeperDistance;
+            Vector3 rightPoint = pointOnSpline - normal * sleeperDistance;
+
+            Vector3 midpoint = (leftPoint + rightPoint) / 2;
+            Vector3 direction = (rightPoint - leftPoint).normalized * sleeperLength;
+
+            Line line = Instantiate(sleeperPrefab, Vector3.up * yOffset, Quaternion.identity, sleepersParent.transform);
+            line.Color = sleeperColor;
+            line.Thickness = thickness;
+
+            line.Start = midpoint - direction;
+            line.End = midpoint + direction;
         }
     }
-
 
     private float CalculateTForSegment(int index, float splineLength, int segments)
     {
@@ -116,20 +145,4 @@ public class TrainTrackDrawer : ImmediateModeShapeDrawer
         Vector3 tangent = spline.EvaluateTangent(t);
         return Vector3.Cross(tangent, Vector3.up).normalized;
     }
-
-    private void DrawSleeperAtPosition(Spline spline, float t, float railDistance, float sleeperDistance)
-    {
-        Vector3 pointOnSpline = spline.EvaluatePosition(t);
-        pointOnSpline.y = pointOnSpline.y + yOffset;
-
-        Vector3 normal = CalculateNormalAtPoint(spline, t);
-
-        Vector3 leftPoint = pointOnSpline + normal * railDistance;
-        Vector3 rightPoint = pointOnSpline - normal * railDistance;
-
-        Vector3 midpoint = (leftPoint + rightPoint) / 2;
-        Vector3 direction = (rightPoint - leftPoint).normalized * sleeperDistance;
-        Draw.Line(midpoint - direction, midpoint + direction, sleeperColor);
-    }
 }
-*/
