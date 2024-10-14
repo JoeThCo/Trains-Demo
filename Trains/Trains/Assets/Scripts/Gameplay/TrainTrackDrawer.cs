@@ -35,6 +35,12 @@ public class TrainTrackDrawer : MonoBehaviour
         if (splineContainer == null)
             splineContainer = GetComponent<SplineContainer>();
 
+        if (railPrefab == null)
+            railPrefab = Resources.Load<Polyline>("RailPrefab");
+
+        if(sleeperPrefab == null)
+            sleeperPrefab = Resources.Load<Line>("SleeperPrefab");
+
         if (trackParent == null)
         {
             trackParent = new GameObject("Track Parent");
