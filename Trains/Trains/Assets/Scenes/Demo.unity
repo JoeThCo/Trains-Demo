@@ -54370,10 +54370,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Car
       objectReference: {fileID: 0}
-    - target: {fileID: 6936496690920563636, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
-      propertyPath: m_EnableCollision
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.x
       value: 33.77
@@ -54414,10 +54410,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7266437357855446309, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
-      propertyPath: m_Materials.Array.data[0]
-      value: 
-      objectReference: {fileID: 2100000, guid: 8c1554e9fdb4fbc458b4568eb133e633, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -54592,26 +54584,6 @@ PrefabInstance:
       propertyPath: m_ConnectedBody
       value: 
       objectReference: {fileID: 4283661022405217206}
-    - target: {fileID: 3894215016729278851, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
-      propertyPath: m_EnableCollision
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4777229312206698503, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4777229312206698503, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 7.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4777229312206698503, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -30
-      objectReference: {fileID: 0}
-    - target: {fileID: 7080800017029585212, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
-      propertyPath: m_TagString
-      value: MainCamera
-      objectReference: {fileID: 0}
     - target: {fileID: 8918794401216106560, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: m_Name
       value: Engine
