@@ -33,7 +33,7 @@ public class GraphGenerator : MonoBehaviour
     {
         ResetGraph();
 
-        //GetComponent<TrainTrackDrawer>().DrawShapes(Camera.current);
+        GetComponent<TrainTrackDrawer>().DrawSplines();
 
         InputSplineContainer = GetComponent<SplineContainer>();
         Graph = new Graph(InputSplineContainer);
