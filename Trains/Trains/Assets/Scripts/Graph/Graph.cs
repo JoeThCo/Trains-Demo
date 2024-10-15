@@ -23,9 +23,6 @@ public class Graph
         //edges
         Edges = CreateEdges(splineContainer).ToArray();
 
-        foreach (Edge edge in Edges)
-            Debug.Log($"{edge.Index}: {edge}");
-
         //node connections
         AdjacencyMatrix = new int[Nodes.Length, Nodes.Length];
         AdjacencyMatrix = CreateAdjacencyMatrix(Nodes, Edges);

@@ -8,6 +8,7 @@ using UnityEngine.Splines;
 public class GraphGenerator : MonoBehaviour
 {
     [SerializeField][Range(1f, 10f)] private float DistanceStep = 5;
+
     [SerializeField] private bool DisplayDebugSpheres = false;
     [SerializeField] private bool DisplayGraphEdges = false;
 
@@ -50,7 +51,7 @@ public class GraphGenerator : MonoBehaviour
         finalSplinesSphereParent = new GameObject("Final Splines Sphere Parent");
         finalSplinesSphereParent.transform.parent = transform;
 
-        Spline[] finalSplines = GetFinalSplines(InputSplineContainer, DistanceStep);
+        Spline[] finalSplines = GetFinalSplines(GetSplinesFromEdge(Graph), DistanceStep);
         foreach (Spline spline in finalSplines)
             FinalSplineContainer.AddSpline(spline);
 
@@ -131,6 +132,19 @@ public class GraphGenerator : MonoBehaviour
     #endregion
 
     #region Splines
+    private Spline[] GetSplinesFromEdge(Graph graph)
+    {
+        List<Spline> splines = new List<Spline>();
+        for (int i = 0; i < graph.Edges.Length; i++)
+        {
+            Edge edge = graph.Edges[i];
+            Spline spline = new Spline(edge.Knots, false);
+            spline.SetTangentMode(TangentMode.AutoSmooth);
+            splines.Add(spline);
+        }
+        return splines.ToArray();
+    }
+
     private List<Vector3> GetInterpolatedSplinePoints(Spline spline, float distanceStep)
     {
         List<Vector3> points = new List<Vector3>();
@@ -205,12 +219,12 @@ public class GraphGenerator : MonoBehaviour
         return nearestSpline;
     }
 
-    private Spline[] GetFinalSplines(SplineContainer inputSplines, float distanceStep)
+    private Spline[] GetFinalSplines(Spline[] graphSplines, float distanceStep)
     {
         //todo I feel like there is still some unnessary steps in this method...
         List<Spline> splines = new List<Spline>();
 
-        foreach (Spline spline in inputSplines.Splines)
+        foreach (Spline spline in graphSplines)
         {
             List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
             HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>() { splinePoints[0] };
