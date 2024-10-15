@@ -21,8 +21,8 @@ public class TrainTrackDrawer : MonoBehaviour
     [SerializeField] private Color railColor;
     [SerializeField] private Color sleeperColor;
 
-    [SerializeField] private Polyline railPrefab;
-    [SerializeField] private Line sleeperPrefab;
+    private Polyline railPrefab;
+    private Line sleeperPrefab;
 
     private SplineContainer splineContainer;
 
@@ -38,7 +38,7 @@ public class TrainTrackDrawer : MonoBehaviour
         if (railPrefab == null)
             railPrefab = Resources.Load<Polyline>("RailPrefab");
 
-        if(sleeperPrefab == null)
+        if (sleeperPrefab == null)
             sleeperPrefab = Resources.Load<Line>("SleeperPrefab");
 
         if (trackParent == null)

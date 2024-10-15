@@ -13,13 +13,9 @@ public class Graph
     public int[,] AdjacencyMatrix { get; private set; }
     public Dictionary<Vector3, Node> PositionToNodeMap { get; private set; }
     public Dictionary<Edge, List<Edge>> EdgeConnectionMap { get; private set; }
-    public static System.Random Random { get; private set; }
 
     public Graph(SplineContainer splineContainer)
     {
-        //todo move this somewhere else
-        Random = new System.Random(0);
-
         //Nodes
         Nodes = CreateNodes(GetUniqueKnots(splineContainer).Values.ToArray()).ToArray();
         PositionToNodeMap = CreateNodePositionMap(Nodes);

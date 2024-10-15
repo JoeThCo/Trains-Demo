@@ -23,6 +23,7 @@ public class GraphGenerator : MonoBehaviour
     private GameObject junctionHolder;
 
     private static Graph Graph;
+    public static System.Random Random { get; private set; }
 
     private void Start()
     {
@@ -32,6 +33,7 @@ public class GraphGenerator : MonoBehaviour
     public void CreateGraph()
     {
         ResetGraph();
+        Random = new System.Random(0);
 
         GetComponent<TrainTrackDrawer>().DrawTracksAndSleepers();
         InputSplineContainer = GetComponent<SplineContainer>();
@@ -48,7 +50,7 @@ public class GraphGenerator : MonoBehaviour
         finalSplinesSphereParent = new GameObject("Final Splines Sphere Parent");
         finalSplinesSphereParent.transform.parent = transform;
 
-        Spline[] finalSplines = GetFinalSplines(GetSplinesFromEdge(Graph), DistanceStep);
+        Spline[] finalSplines = GetFinalSplines(InputSplineContainer, DistanceStep);
         foreach (Spline spline in finalSplines)
             FinalSplineContainer.AddSpline(spline);
 
@@ -129,19 +131,6 @@ public class GraphGenerator : MonoBehaviour
     #endregion
 
     #region Splines
-    private Spline[] GetSplinesFromEdge(Graph graph)
-    {
-        List<Spline> splines = new List<Spline>();
-        for (int i = 0; i < graph.Edges.Length; i++)
-        {
-            Edge edge = graph.Edges[i];
-            Spline spline = new Spline(edge.Knots, false);
-            spline.SetTangentMode(TangentMode.AutoSmooth);
-            splines.Add(spline);
-        }
-        return splines.ToArray();
-    }
-
     private List<Vector3> GetInterpolatedSplinePoints(Spline spline, float distanceStep)
     {
         List<Vector3> points = new List<Vector3>();
@@ -216,11 +205,12 @@ public class GraphGenerator : MonoBehaviour
         return nearestSpline;
     }
 
-    private Spline[] GetFinalSplines(Spline[] graphSplines, float distanceStep)
+    private Spline[] GetFinalSplines(SplineContainer inputSplines, float distanceStep)
     {
+        //todo I feel like there is still some unnessary steps in this method...
         List<Spline> splines = new List<Spline>();
 
-        foreach (Spline spline in graphSplines)
+        foreach (Spline spline in inputSplines.Splines)
         {
             List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
             HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>() { splinePoints[0] };
@@ -333,7 +323,7 @@ public class GraphGenerator : MonoBehaviour
         //foreach (Edge mapEdges in result)
         //Debug.LogError(mapEdges);
 
-        int randomIndex = Graph.Random.Next(0, result.Length);
+        int randomIndex = Random.Next(0, result.Length);
         Edge outputEdge = result[randomIndex];
         //Debug.LogWarning($"Out {outputEdge.Index} {outputEdge}");
         return outputEdge;
