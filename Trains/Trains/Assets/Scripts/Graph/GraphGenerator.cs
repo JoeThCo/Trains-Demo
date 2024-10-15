@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -51,7 +52,11 @@ public class GraphGenerator : MonoBehaviour
         finalSplinesSphereParent = new GameObject("Final Splines Sphere Parent");
         finalSplinesSphereParent.transform.parent = transform;
 
+        DateTime startSplinesTime = DateTime.Now;
         Spline[] finalSplines = GetFinalSplines(GetSplinesFromEdge(Graph), DistanceStep);
+        DateTime endSplinesTime = DateTime.Now;
+        Debug.Log($"Spline Generation: {(endSplinesTime - startSplinesTime).TotalSeconds}");
+
         foreach (Spline spline in finalSplines)
             FinalSplineContainer.AddSpline(spline);
 
@@ -208,7 +213,7 @@ public class GraphGenerator : MonoBehaviour
             float3 closestPointOnSpline;
             float t;
 
-            SplineUtility.GetNearestPoint(spline, position, out closestPointOnSpline, out t);
+            SplineUtility.GetNearestPoint(spline, position, out closestPointOnSpline, out t, 1, 1);
             float distance = Vector3.Distance(position, closestPointOnSpline);
             if (distance < minDistance)
             {
@@ -221,29 +226,38 @@ public class GraphGenerator : MonoBehaviour
 
     private Spline[] GetFinalSplines(Spline[] graphSplines, float distanceStep)
     {
-        //todo I feel like there is still some unnessary steps in this method...
-        List<Spline> splines = new List<Spline>();
+        List<Spline> splines = new List<Spline>(graphSplines.Length); // Pre-allocate the list size for optimization.
 
         foreach (Spline spline in graphSplines)
         {
+            // Interpolated points on the current spline.
             List<Vector3> splinePoints = GetInterpolatedSplinePoints(spline, distanceStep);
-            HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>() { splinePoints[0] };
+
+            // Using HashSet to avoid duplicate points.
+            HashSet<Vector3> outputSplinePoints = new HashSet<Vector3>();
+            NativeSpline nativeSpline = new NativeSpline(InputSplineContainer.Splines[0]);
+
             foreach (Vector3 point in splinePoints)
             {
-                NativeSpline nativeSpline = new NativeSpline(GetNearestSpline(point, InputSplineContainer));
+                // Caching the nativeSpline outside the loop and using a nearest point comparison to find the closest spline.
+                nativeSpline = new NativeSpline(GetNearestSpline(point, InputSplineContainer));
                 SplineUtility.GetNearestPoint(nativeSpline, point, out float3 nearest, out float t);
                 outputSplinePoints.Add(nearest);
             }
-            outputSplinePoints.Add(splinePoints[splinePoints.Count - 1]);
 
+            // Now making the points equally spaced and then generating the new spline.
             HashSet<Vector3> outputPoints = MakeEqualDistanced(outputSplinePoints.ToArray(), distanceStep);
+
             Spline newSpline = new Spline();
             foreach (Vector3 point in outputPoints)
                 newSpline.Add(point);
+
             splines.Add(newSpline);
         }
+
         return splines.ToArray();
     }
+
     #endregion
 
     #region Debug
