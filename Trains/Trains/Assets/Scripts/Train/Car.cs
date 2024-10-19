@@ -166,7 +166,7 @@ public class Car : MonoBehaviour
     private void UpdateCarTransform()
     {
         NativeSpline nativeSpline = new NativeSpline(CurrentSpline);
-        SplineUtility.GetNearestPoint(nativeSpline, Rigidbody.position, out float3 nearestPoint, out float newT);
+        SplineUtility.GetNearestPoint(nativeSpline, transform.localPosition, out float3 nearestPoint, out float newT);
         t = Mathf.Clamp01(newT);
         WantedPosition = (Vector3)nearestPoint;
 
@@ -174,8 +174,8 @@ public class Car : MonoBehaviour
         Vector3 up = nativeSpline.EvaluateUpVector(t);
         WantedRotation = isRotationBackwards ? Quaternion.LookRotation(-forward, up) : Quaternion.LookRotation(forward, up);
 
-        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, WantedPosition, positionLerpSpeed * Time.fixedDeltaTime));
-        Rigidbody.MoveRotation(Quaternion.Slerp(transform.rotation, WantedRotation, rotationLerpSpeed * Time.fixedDeltaTime));
+        transform.localPosition = Vector3.Lerp(Rigidbody.position, WantedPosition, positionLerpSpeed * Time.fixedDeltaTime);
+        transform.localRotation = Quaternion.Slerp(transform.rotation, WantedRotation, rotationLerpSpeed * Time.fixedDeltaTime);
 
         Rigidbody.velocity = Rigidbody.velocity.magnitude * GetEngineForward();
     }
@@ -211,4 +211,6 @@ public class Car : MonoBehaviour
         Gizmos.DrawLine(position, position + (forward * gizmoLineDistance));
     }
     #endregion
+
+
 }

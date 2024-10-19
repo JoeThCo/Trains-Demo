@@ -21,10 +21,10 @@ public class Engine : Car
 
     protected override void FixedUpdate()
     {
-        if (Input.GetKey(KeyCode.W))
+        if (Input.GetKey(KeyCode.Q))
             Throttle(accleration);
 
-        if (Input.GetKey(KeyCode.S))
+        if (Input.GetKey(KeyCode.E))
             Throttle(-accleration);
 
         base.FixedUpdate();
