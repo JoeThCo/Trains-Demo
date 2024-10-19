@@ -13603,7 +13603,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6df144bcc8412f9439c27419250f6f38, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DistanceStep: 2
+  DistanceStep: 1
   DisplayDebugSpheres: 0
   DisplayGraphEdges: 0
 --- !u!114 &529591979
@@ -14417,8 +14417,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5952431534672184359, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
+      propertyPath: positionLerpSpeed
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 5952431534672184359, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: rotationLerpSpeed
-      value: 15
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 5952431534672184359, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: postitionLerpSpeed
@@ -14429,20 +14433,24 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6936496690920563636, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
+      propertyPath: m_RotationDriveMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6936496690920563636, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_XDrive.positionDamper
-      value: 50
+      value: 250
       objectReference: {fileID: 0}
     - target: {fileID: 6936496690920563636, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_YDrive.positionDamper
-      value: 50
+      value: 250
       objectReference: {fileID: 0}
     - target: {fileID: 6936496690920563636, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_ZDrive.positionDamper
-      value: 50
+      value: 250
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 26.58
+      value: 29.51
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.y
@@ -14450,7 +14458,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -24.1
+      value: -22.63
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalRotation.w
@@ -62168,7 +62176,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 33.77
+      value: 35.03
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.y
@@ -62176,7 +62184,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -21.1
+      value: -20.68
       objectReference: {fileID: 0}
     - target: {fileID: 7144080980798440651, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_LocalRotation.w
@@ -62380,6 +62388,10 @@ PrefabInstance:
       propertyPath: m_ConnectedBody
       value: 
       objectReference: {fileID: 4283661022405217206}
+    - target: {fileID: 3894215016729278851, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
+      propertyPath: m_SlerpDrive.positionDamper
+      value: 250
+      objectReference: {fileID: 0}
     - target: {fileID: 5986701037857621667, guid: 6d23e04e4a761cb44bb1a6667beb5654, type: 3}
       propertyPath: car
       value: 

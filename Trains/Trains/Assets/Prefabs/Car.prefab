@@ -153,8 +153,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5da25e8cf5ba7a41bee6bfd9ac19d10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  positionLerpSpeed: 15
-  rotationLerpSpeed: 15
+  positionLerpSpeed: 20
+  rotationLerpSpeed: 20
   gizmoLineDistance: 7.5
 --- !u!54 &4640811953665836793
 Rigidbody:
@@ -238,19 +238,19 @@ ConfigurableJoint:
   m_XDrive:
     serializedVersion: 4
     positionSpring: 0
-    positionDamper: 50
+    positionDamper: 250
     maximumForce: 3.402823e+38
     useAcceleration: 0
   m_YDrive:
     serializedVersion: 4
     positionSpring: 0
-    positionDamper: 50
+    positionDamper: 250
     maximumForce: 3.402823e+38
     useAcceleration: 0
   m_ZDrive:
     serializedVersion: 4
     positionSpring: 0
-    positionDamper: 50
+    positionDamper: 250
     maximumForce: 3.402823e+38
     useAcceleration: 0
   m_TargetRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -271,7 +271,7 @@ ConfigurableJoint:
   m_SlerpDrive:
     serializedVersion: 4
     positionSpring: 0
-    positionDamper: 5
+    positionDamper: 250
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_ProjectionMode: 1
@@ -301,6 +301,14 @@ PrefabInstance:
       propertyPath: parentTo
       value: 
       objectReference: {fileID: 7144080980798440651}
+    - target: {fileID: 2513594401396435232, guid: 2f50b0f4b3150f04da08f3ffbb3aafe7, type: 3}
+      propertyPath: m_Size.y
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2513594401396435232, guid: 2f50b0f4b3150f04da08f3ffbb3aafe7, type: 3}
+      propertyPath: m_Center.y
+      value: 2.6
+      objectReference: {fileID: 0}
     - target: {fileID: 2721678728191414606, guid: 2f50b0f4b3150f04da08f3ffbb3aafe7, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
