@@ -351,7 +351,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8947518335923693428, guid: 2f50b0f4b3150f04da08f3ffbb3aafe7, type: 3}
       propertyPath: m_Name
-      value: PlayerDetector
+      value: AttachToCar
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

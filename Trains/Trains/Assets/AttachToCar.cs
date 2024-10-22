@@ -7,6 +7,17 @@ public class AttachToCar : MonoBehaviour
     [SerializeField] Car car;
     [SerializeField] private Transform parentTo;
     CharacterController playerController;
+    public BoxCollider BoxCollider { get; private set; }
+
+    private void Start()
+    {
+        BoxCollider = GetComponent<BoxCollider>();
+    }
+
+    public bool isPlayerControllerAttached()
+    {
+        return playerController != null;
+    }
 
     private void OnTriggerEnter(Collider other)
     {

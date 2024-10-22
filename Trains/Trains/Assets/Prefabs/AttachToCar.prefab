@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2513594401396435232}
   - component: {fileID: 80244762258868479}
   m_Layer: 0
-  m_Name: PlayerDetector
+  m_Name: AttachToCar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -66,3 +66,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c18ea60053ba31b43b29364c2cc1690b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  car: {fileID: 0}
+  parentTo: {fileID: 0}
