@@ -62263,7 +62263,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 296629356676813684, guid: a258d22de4bfa2f44bdc0a2f54627fac, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 300
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 296629356676813684, guid: a258d22de4bfa2f44bdc0a2f54627fac, type: 3}
       propertyPath: m_SizeDelta.y
@@ -62319,13 +62319,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1364293378664560515, guid: a258d22de4bfa2f44bdc0a2f54627fac, type: 3}
       propertyPath: m_text
-      value: 'Q - Forwards
+      value: 'WASD and Space - Move Player
 
-        E - Backwards'
+        Q/E - Move Train, when on Engine
+        (Black)'
       objectReference: {fileID: 0}
     - target: {fileID: 1364293378664560515, guid: a258d22de4bfa2f44bdc0a2f54627fac, type: 3}
       propertyPath: m_fontSize
-      value: 22.05
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 7413806170653446040, guid: a258d22de4bfa2f44bdc0a2f54627fac, type: 3}
       propertyPath: m_Name
