@@ -49,7 +49,7 @@ MonoBehaviour:
   blendMode: 1
   scaleMode: 1
   color: {r: 1, g: 1, b: 1, a: 1}
-  detailLevel: 2
+  detailLevel: 0
   renderQueue: -1
   zTest: 4
   zOffsetFactor: 0
@@ -114,5 +114,5 @@ MeshRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_AdditionalVertexStreams: {fileID: 0}

@@ -14,6 +14,7 @@ public class Car : MonoBehaviour
     public Vector3 WantedPosition { get; private set; }
     public Quaternion WantedRotation { get; private set; }
 
+    public AttachToCar AttachToCar { get; private set; }
     public Train Train { get; private set; }
     public int Index { get; private set; }
 
@@ -24,6 +25,8 @@ public class Car : MonoBehaviour
     [SerializeField] private float gizmoLineDistance = 7.5f;
 
     private float t = 0;
+    private float forwardT = 0;
+    private float backwardT = 0;
     public float Dot { get; private set; }
 
     private bool isSwitching = false;
@@ -65,7 +68,8 @@ public class Car : MonoBehaviour
     protected virtual void CarInit()
     {
         Rigidbody = GetComponent<Rigidbody>();
-
+        AttachToCar = GetComponentInChildren<AttachToCar>();
+        
         Car_OnEdgeChanged(GraphGenerator.GetEdge(0));
         //Debug.LogWarning($"Edge: {CurrentEdge.Index}");
 
@@ -99,9 +103,7 @@ public class Car : MonoBehaviour
             OnJunctionExit?.Invoke();
 
         if ((isForward && Dot < 0) || (!isForward && Dot > 0))
-        {
             isForward = !isForward;
-        }
     }
 
     #region Events
@@ -166,16 +168,23 @@ public class Car : MonoBehaviour
     private void UpdateCarTransform()
     {
         NativeSpline nativeSpline = new NativeSpline(CurrentSpline);
-        SplineUtility.GetNearestPoint(nativeSpline, Rigidbody.position, out float3 nearestPoint, out float newT);
+
+        SplineUtility.GetNearestPoint(nativeSpline, transform.localPosition, out float3 nearestPoint, out float newT);
+        SplineUtility.GetNearestPoint(nativeSpline, transform.localPosition + transform.forward * AttachToCar.BoxCollider.size.z * 0.25f, out float3 forwardPoint, out forwardT);
+        SplineUtility.GetNearestPoint(nativeSpline, transform.localPosition - transform.forward * AttachToCar.BoxCollider.size.z * 0.25f, out float3 backwardPoint, out backwardT);
+
         t = Mathf.Clamp01(newT);
+        forwardT = Mathf.Clamp01(forwardT);
+        backwardT = Mathf.Clamp01(backwardT);
+
         WantedPosition = (Vector3)nearestPoint;
 
         Vector3 forward = Vector3.Normalize(CurrentSpline.EvaluateTangent(t));
         Vector3 up = nativeSpline.EvaluateUpVector(t);
         WantedRotation = isRotationBackwards ? Quaternion.LookRotation(-forward, up) : Quaternion.LookRotation(forward, up);
 
-        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, WantedPosition, positionLerpSpeed * Time.fixedDeltaTime));
-        Rigidbody.MoveRotation(Quaternion.Slerp(transform.rotation, WantedRotation, rotationLerpSpeed * Time.fixedDeltaTime));
+        transform.localPosition = Vector3.Lerp(Rigidbody.position, WantedPosition, positionLerpSpeed * Time.fixedDeltaTime);
+        transform.localRotation = Quaternion.Slerp(transform.rotation, WantedRotation, rotationLerpSpeed * Time.fixedDeltaTime);
 
         Rigidbody.velocity = Rigidbody.velocity.magnitude * GetEngineForward();
     }
@@ -187,7 +196,7 @@ public class Car : MonoBehaviour
 
     private bool IsAtEndOfSpline()
     {
-        return t <= 0 + JUNCTION_EPSILON || t >= 1 - JUNCTION_EPSILON;
+        return isForward ? forwardT >= 1 : backwardT <= 0;
     }
     #endregion
 
@@ -211,4 +220,5 @@ public class Car : MonoBehaviour
         Gizmos.DrawLine(position, position + (forward * gizmoLineDistance));
     }
     #endregion
+
 }
