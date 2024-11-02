@@ -423,15 +423,6 @@ namespace Den.Tools
 				else return false;
 			}
 
-			static public bool Intersects<T>(T[] array1, T[] array2) where T: class
-			/// If any element of one array is contained in another
-			{
-				foreach (T e1 in array1)
-					foreach (T e2 in array2)
-						if (e1==e2) return true;
-				return false;
-			}
-
 			static public bool AllNull<T>(this T[] array) where T: class
 			{
 				if (array == null) return false;  //wierd case
@@ -637,18 +628,6 @@ namespace Den.Tools
 				return result;
 			}
 
-			static public void Convert<T,Y> (Y[] src, T[] dst)
-			{
-				for (int i=0; i<src.Length; i++) 
-					dst[i] = (T)(object)(src[i]);
-			}
-
-			static public void Convert<T,Y> (Y[] src, T[] dst, Func<Y,T> convertFn)
-			{
-				for (int i=0; i<src.Length; i++) 
-					dst[i] = convertFn(src[i]);
-			}
-
 			static public T[] Convert<T,Y> (ICollection<Y> src)
 			{
 				Y[] tmpArr = new Y[src.Count];
@@ -715,8 +694,7 @@ namespace Den.Tools
 				return newArr;
 			}
 
-			static public TA[] WhereSelect<TC,TA> (this ICollection<TC> collection, Func<TC,TA> fn)
-			/// Just Where conflicts with Linq
+			static public TA[] Where<TC,TA> (this ICollection<TC> collection, Func<TC,TA> fn)
 			{
 				TA[] array = new TA[collection.Count];
 

@@ -172,8 +172,8 @@ namespace Den.Tools.Matrices.Window
 
 			public float Zoom 
 			{ 
-				get{ return previewUI.scrollZoom.zoom.x;} 
-				set{previewUI.scrollZoom.zoom=new Vector2(value,value); serializedZoom=value;} 
+				get{ return previewUI.scrollZoom.zoom;} 
+				set{previewUI.scrollZoom.zoom=value; serializedZoom=value;} 
 			}
 
 			public Vector2 ScrollZero => new Vector2(0,0);
@@ -182,8 +182,8 @@ namespace Den.Tools.Matrices.Window
 			{get{
 				if (Matrix==null) return Vector2.zero;
 				else return new Vector2(
-				(-Matrix.rect.offset.x-Matrix.rect.size.x/2) * previewUI.scrollZoom.zoom.x - toolbarWidth/2 + Screen.width/2, //or + previewUI.rootVisualRect.width/2, 
-				(Matrix.rect.offset.z+Matrix.rect.size.z/2) * previewUI.scrollZoom.zoom.y + Screen.height/2 );
+				(-Matrix.rect.offset.x-Matrix.rect.size.x/2) * previewUI.scrollZoom.zoom - toolbarWidth/2 + Screen.width/2, //or + previewUI.rootVisualRect.width/2, 
+				(Matrix.rect.offset.z+Matrix.rect.size.z/2) * previewUI.scrollZoom.zoom + Screen.height/2 );
 			}}
 
 			public Rect MatrixRect
@@ -207,14 +207,14 @@ namespace Den.Tools.Matrices.Window
 
 				if (serializedScrollStored  ||  Matrix==null) previewUI.scrollZoom.scroll = serializedScroll;
 				else previewUI.scrollZoom.scroll = ScrollCenter;
-				previewUI.scrollZoom.zoom = new Vector2(serializedZoom, serializedZoom);
+				previewUI.scrollZoom.zoom = serializedZoom;
 
 				previewUI.Draw(DrawPreview, inInspector:false);
 				toolbarUI.Draw(DrawToolbar, inInspector:false);
 
 				serializedScroll = previewUI.scrollZoom.scroll;
 				serializedScrollStored = true;
-				serializedZoom = previewUI.scrollZoom.zoom.x; 
+				serializedZoom = previewUI.scrollZoom.zoom; 
 			}
 
 
@@ -222,8 +222,8 @@ namespace Den.Tools.Matrices.Window
 			{
 				//background
 				Rect displayRect = new Rect(0, 0, Screen.width, Screen.height);
-				float gridBackgroundColor = !UI.current.styles.isPro ? 0.45f : 0.2f;
-				float gridColor = !UI.current.styles.isPro ? 0.5f : 0.23f;
+				float gridBackgroundColor = !StylesCache.isPro ? 0.45f : 0.2f;
+				float gridColor = !StylesCache.isPro ? 0.5f : 0.23f;
 				Draw.StaticGrid(
 					displayRect: displayRect,
 					cellSize:128,

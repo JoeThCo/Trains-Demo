@@ -57,14 +57,13 @@ namespace MapMagic.Nodes.GUI
 			using (Cell.LinePx(0)) CheckShader(gen);
 
 			using (Cell.LinePx(20)) GeneratorDraw.DrawLayersAddRemove(gen, ref gen.layers, inversed:true, unlinkBackground:true);
-			using (Cell.LinePx(0)) GeneratorDraw.DrawLayersThemselves(gen, gen.layers, inversed:true, layerEditor:DrawMegaSplatLayer);
+			using (Cell.LinePx(0)) GeneratorDraw.DrawLayersThemselves(gen, gen.layers, inversed:true, layerEditor:DrawCTSLayer);
 		}
 		
-		private static void DrawMegaSplatLayer (Generator tgen, int num)
+		private static void DrawCTSLayer (Generator tgen, int num)
 		{
 			MegaSplatOutput200 gen = (MegaSplatOutput200)tgen;
 			MegaSplatOutput200.MegaSplatLayer layer = gen.layers[num];
-			int channelNum = layer.channelNum;
 			if (layer == null) return;
 
 			#if __MEGASPLAT__
@@ -97,9 +96,9 @@ namespace MapMagic.Nodes.GUI
 					icon = (Texture2DArray)material?.GetTexture("_Diffuse");
 
 				#if __MEGASPLAT__
-				if (textureList != null  &&  channelNum < textureList.clusters.Length)
+				if (textureList != null)
 					//icon = textureList.clusters[num].previewTex; //preview textures doesnt seem to be working in recent versions
-					index = textureList.clusters[channelNum].indexes[0];
+					index = textureList.clusters[num].indexes[0];
 				#endif
 
 				using (Cell.RowPx(28)) 

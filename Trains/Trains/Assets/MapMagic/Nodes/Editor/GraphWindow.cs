@@ -60,12 +60,12 @@ namespace MapMagic.Nodes.GUI
 			{
 				MapMagicObject mmo = selectedGameObj.GetComponent<MapMagicObject>();
 				if (mmo != null && mmo.ContainsGraph(graph)) return mmo;
-				//we can't assign ClusterAsset same way! Add code for it 
+				//we can't assign ClusterAsset same way! Add code for it
 			}
 
-			//looking in all objects (only on scene reload or selection change)
+			//looking in all objects
 			UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-			if (scene != prevSceneLoaded || scene.rootCount != prevRootObjsCount || Selection.activeObject != prevObjSelected)
+			if (scene != prevSceneLoaded || scene.rootCount != prevRootObjsCount || Selection.activeGameObject != prevObjSelected)
 			{
 				MapMagicObject[] allMM = GameObject.FindObjectsOfType<MapMagicObject>();
 				for (int m=0; m<allMM.Length; m++)
@@ -73,11 +73,7 @@ namespace MapMagic.Nodes.GUI
 
 				prevSceneLoaded = scene;
 				prevRootObjsCount = scene.rootCount;
-				prevObjSelected = Selection.activeObject;
-
-				#if MM_DEBUG
-				Debug.Log("Finding MapMagic");
-				#endif
+				prevObjSelected = Selection.activeGameObject;
 			}
 
 			return null;
@@ -90,12 +86,24 @@ namespace MapMagic.Nodes.GUI
 			return current.mapMagic;
 		}}
 
-		public void RefreshMapMagic ()
+		public void RefreshMapMagic () => RefreshMapMagic(true, null, null); 
+		public void RefreshMapMagic (Generator gen) => RefreshMapMagic(false, gen, null);
+		public void RefreshMapMagic (Generator gen1, Generator gen2) => RefreshMapMagic(false, gen1, gen2);
+		private void RefreshMapMagic (bool all, Generator gen1, Generator gen2)
+		/// makes current mapMagic to generate
+		/// if gen not specified forcing re-generate
 		{
-			//if (MapMagicRelevant)  //with new clear system relevancy check is not necessary
-				mapMagic?.Refresh(false);
+			graph.changeVersion++;
+			
+			if (MapMagicRelevant)  //TODO: test without relevancy check
+			{
+				if (all) RelatedMapMagic?.Refresh();
+				else RelatedMapMagic?.Refresh(gen1, gen2);
+			}
 
-			OnGraphChanged?.Invoke(graph);
+			EditorUtility.SetDirty(current.graph);
+
+			OnGraphChanged?.Invoke(current.graph);
 		}
 
 		public static Action<Graph> OnGraphChanged;
@@ -114,7 +122,7 @@ namespace MapMagic.Nodes.GUI
 		UI dragUI = new UI();
 		UI miniSelectedUI = new UI();
 
-		public bool IsMini => graphUI.scrollZoom.zoom.x < 0.4f; //minimum full-version zoom is 0.4375. Next step (0.375) switches to mini
+		public bool IsMini => graphUI.scrollZoom.zoom < 0.4f; //minimum full-version zoom is 0.4375. Next step (0.375) switches to mini
 		public const float miniZoom = 0.375f;
 
 		bool wasGenerating = false; //to update final frame when generate is finished
@@ -148,11 +156,6 @@ namespace MapMagic.Nodes.GUI
 			ScrollZoomOnOpen(); //focusing after script re-compile
 
 			selected.Clear(); //removing selection from previous graph
-
-			//setting debug name
-			#if MM_DEBUG
-			graph.debugName = name;
-			#endif
 		}
 
 		public void OnDisable () 
@@ -237,7 +240,7 @@ namespace MapMagic.Nodes.GUI
 
 			//storing graph pivot to focus it on load
 			Vector3 scrollZoom = graphUI.scrollZoom.GetWindowCenter(position.size);
-			scrollZoom.z = graphUI.scrollZoom.zoom.x;
+			scrollZoom.z = graphUI.scrollZoom.zoom;
 			if (graphsScrollZooms.ContainsKey(graph)) graphsScrollZooms[graph] = scrollZoom;
 			else graphsScrollZooms.Add(graph, scrollZoom);
 
@@ -252,11 +255,6 @@ namespace MapMagic.Nodes.GUI
 				}
 				mapMagicObject.guiDraggingField = newForceDrafts;
 			}
-
-			//setting debug name
-			#if MM_DEBUG
-			graph.debugName = name;
-			#endif
 
 			//showing fps
 			#if MM_DEBUG
@@ -282,8 +280,8 @@ namespace MapMagic.Nodes.GUI
 			bool isMini = IsMini;
 
 			//background
-			float gridColor = !UI.current.styles.isPro ? 0.45f : 0.12f;
-			float gridBackgroundColor = !UI.current.styles.isPro ? 0.5f : 0.15f;
+			float gridColor = !StylesCache.isPro ? 0.45f : 0.12f;
+			float gridBackgroundColor = !StylesCache.isPro ? 0.5f : 0.15f;
 
 			#if MM_DEBUG
 				if (!graph.debugGraphBackground)
@@ -309,19 +307,11 @@ namespace MapMagic.Nodes.GUI
 			#endif
 
 			//drawing groups
-			foreach (Auxiliary aux in graph.groups)
-				using (Cell.Custom(aux.guiPos.x, aux.guiPos.y, aux.guiSize.x, aux.guiSize.y)) 
+			foreach (Group group in graph.groups)
+				using (Cell.Custom(group.guiPos.x, group.guiPos.y, group.guiSize.x, group.guiSize.y)) 
 				{
-					if (aux is Group group)
-					{
-						GroupDraw.DragGroup(group, graph.generators, graph.groups);
-						GroupDraw.DrawGroup(group, isMini:isMini);
-					}
-					if (aux is Comment comment)
-					{
-						GroupDraw.ResizeComment(comment);
-						GroupDraw.DrawComment(comment, isMini:isMini);
-					}
+					GroupDraw.DragGroup(group, graph.generators);
+					GroupDraw.DrawGroup(group, isMini:isMini);
 				}
 
 
@@ -404,19 +394,6 @@ namespace MapMagic.Nodes.GUI
 			//delete selected generators
 			if (selected!=null  &&  selected.Count!=0  &&  Event.current.type==EventType.KeyDown  &&  Event.current.keyCode==KeyCode.Delete)
 				GraphEditorActions.RemoveGenerators(graph, selected);
-
-			//copy-paste selected generators
-			if (!UI.current.layout  &&  Event.current.type == EventType.KeyDown  && Event.current.control)
-			{
-				if (Event.current.keyCode == KeyCode.C)
-					GeneratorRightClick.copiedGenerators = graph.Export(selected);
-				if (Event.current.keyCode == KeyCode.V)
-				{
-					Generator[] imported = graph.Import(GeneratorRightClick.copiedGenerators); 
-					Graph.Reposition(imported, graphUI.mousePos);
-				}
-			}
-			
 		}
 
 		private void DrawMiniSelected () 
@@ -606,8 +583,8 @@ namespace MapMagic.Nodes.GUI
 								mapMagic.GetProgress();
 								Draw.Texture(backgroundTex);
 
-								Texture2D fillTex = UI.current.textures.GetBlankTexture(UI.current.styles.isPro ? Color.grey : Color.white);
-								Color color = UI.current.styles.isPro ? new Color(0.24f, 0.37f, 0.58f) : new Color(0.44f, 0.574f, 0.773f);
+								Texture2D fillTex = UI.current.textures.GetBlankTexture(StylesCache.isPro ? Color.grey : Color.white);
+								Color color = StylesCache.isPro ? new Color(0.24f, 0.37f, 0.58f) : new Color(0.44f, 0.574f, 0.773f);
 								Draw.ProgressBarGauge(progress, fillTex, color);
 							}
 
@@ -626,24 +603,21 @@ namespace MapMagic.Nodes.GUI
 									EditorUtility.SetDirty(mapMagicObject);
 								}
 
-								current.mapMagic.Refresh(clearAll:true);
+								GraphWindow.current.mapMagic.ClearAll();
+								GraphWindow.current.mapMagic.StartGenerate();
 							}
 
 						using (Cell.RowPx(20))
 							if (Draw.Button(null, icon:UI.current.textures.GetTexture("DPUI/Icons/Refresh"), iconScale:0.5f, visible:false))
 							{
-								current.mapMagic.Refresh(clearAll:false);
+								GraphWindow.current.mapMagic.StartGenerate();
 							}
 
 						//ready mark
 						if (!isGenerating)
 						{
 							Cell.EmptyRow();
-							#if !MM_DEBUG
 							using (Cell.RowPx(40)) Draw.Label("Ready");
-							#else
-							using (Cell.RowPx(140)) Draw.Label(graph.IdsVersions().ToString());
-							#endif
 						}
 					}
 
@@ -662,15 +636,15 @@ namespace MapMagic.Nodes.GUI
 
 				using (Cell.RowPx(20))
 				{
-					if (graphUI.scrollZoom.zoom.x < 0.999f)
+					if (graphUI.scrollZoom.zoom < 0.999f)
 					{
 						if (Draw.Button(null, icon:UI.current.textures.GetTexture("DPUI/Icons/ZoomSmallPlus"), iconScale:0.5f, visible:false))
-							graphUI.scrollZoom.ZoomTo(Vector2.one, position.size/2);
+							graphUI.scrollZoom.Zoom(1f, position.size/2);
 					}
 					else
 					{
 						if (Draw.Button(null, icon:UI.current.textures.GetTexture("DPUI/Icons/ZoomSmallMinus"), iconScale:0.5f, visible:false))
-							graphUI.scrollZoom.ZoomTo(new Vector2(miniZoom,miniZoom), position.size/2); 
+							graphUI.scrollZoom.Zoom(miniZoom, position.size/2); 
 					}
 				}
 			}
@@ -1101,7 +1075,7 @@ namespace MapMagic.Nodes.GUI
 				if (graphsScrollZooms.TryGetValue(graph, out Vector3 scrollZoom))
 				{
 					graphUI.scrollZoom.FocusWindowOn(new Vector2(scrollZoom.x, scrollZoom.y), position.size);
-					graphUI.scrollZoom.zoom = new Vector2(scrollZoom.z,scrollZoom.z);
+					graphUI.scrollZoom.zoom = scrollZoom.z;
 				}
 
 				else

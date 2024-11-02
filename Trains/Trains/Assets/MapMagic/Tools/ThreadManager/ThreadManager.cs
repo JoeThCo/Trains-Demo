@@ -16,16 +16,14 @@ namespace Den.Tools.Tasks
 			public int priority;
 			public Action action;
 			public Thread thread;
-			public bool wasActiveBeforePause;
 
 			public bool Enqueued {get{ return queue.Contains(this); }}
-			public bool Active {get{ return active.Contains(this) || paused.Contains(this); }}
-			public bool IsAlive {get{ return queue.Contains(this) || active.Contains(this) || paused.Contains(this); }}
+			public bool Active {get{ return active.Contains(this); }}
+			public bool IsAlive {get{ return queue.Contains(this) || active.Contains(this); }}
 		}
 
 		private static List<Task> queue = new List<Task>();
 		private static List<Task> active = new List<Task>();
-		private static List<Task> paused = new List<Task>();
 
 		public static int maxThreads = 3;
 		public static int processorThreads = -1;
@@ -94,85 +92,6 @@ namespace Den.Tools.Tasks
 				}
 		}
 
-
-		public static void Pause (Task task)
-		{
-//			bool suspend = false;
-
-			lock (paused)
-			{
-				if (paused.Contains(task))
-					return; //do nothing if already paused
-
-				paused.Add(task);
-
-				#if MM_DEBUG
-				Log.AddThreaded("ThreadManager.Pause AddedToPause");
-				#endif
-
-				//if it's active - suspending
-				lock (active)
-					if (active.Contains(task))
-					{
-						active.Remove(task);
-
-						#if MM_DEBUG
-						Log.AddThreaded("ThreadManager.Pause RemoveFromActive");
-						#endif
-
-						task.wasActiveBeforePause = true;
-
-//						suspend = true;
-					}
-
-				//if in queue - removing from queue
-				lock (queue)
-					if (queue.Contains(task))
-					{
-						queue.Remove(task);
-
-						#if MM_DEBUG
-						Log.AddThreaded("ThreadManager.Pause RemoveFromQueue");
-						#endif
-
-						task.wasActiveBeforePause = false;
-					}
-			}
-
-//			if (suspend)
-//				task.thread.Suspend(); //can't do anything after this
-		}
-
-		public static void Resume (Task task)
-		{
-			lock (paused)
-			{
-				paused.Remove(task);
-
-				if (task.wasActiveBeforePause)
-				{
-					lock (active)
-					{
-						active.Add(task);
-
-						#if MM_DEBUG
-						Log.AddThreaded("ThreadManager.Resume AddedToActive");
-						#endif
-
-//						task.thread.Resume();
-					}
-				}
-				else
-					lock (queue)
-					{
-						queue.Add(task);
-
-						#if MM_DEBUG
-						Log.AddThreaded("ThreadManager.Resume AddedToQueue");
-						#endif
-					}
-			}
-		}
 
 		public static void LaunchThreads ()
 		{
@@ -304,20 +223,6 @@ namespace Den.Tools.Tasks
 
 		public static bool IsWorking {get{ return queue.Count!=0 || active.Count!=0; }}
 
-
-		public static Task GetCurrentTask ()
-		{
-			Thread thread = Thread.CurrentThread;
-
-			bool IsCurrent (Task task) => task.thread == thread;
-
-			Task current = null;
-			current = active.Find(IsCurrent);
-			if (current == null) current = queue.Find(IsCurrent);
-			if (current == null) current = paused.Find(IsCurrent);
-
-			return current;
-		}
 
 		public static string DebugState ()
 		/// returns active thread names and queue names to debug

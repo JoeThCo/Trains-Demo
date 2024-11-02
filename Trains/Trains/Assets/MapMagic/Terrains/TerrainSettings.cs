@@ -54,9 +54,6 @@ namespace MapMagic.Terrains
 		[Val(name="Tree LOD Bias Multiplier", cat="Trees")]	public float treeLODBiasMultiplier = 1;  
 		[Val(name="Bake Light Probes For Trees", cat="Trees")]	public bool bakeLightProbesForTrees = false;
 		[Val(name="Remove Light Probe Ringing", cat="Trees")]	public bool deringLightProbesForTrees = true;
-		#if UNITY_2021_3_OR_NEWER
-		[Val(name="Preserve Tree Prototype Layers", cat="Trees")]	public bool preserveTreePrototypeLayers = false;
-		#endif
 
 		[Val(name="Wind Speed", cat="WindTint")]		public float windSpeed = 0.5f;
 		[Val(name="Wind Bending", cat="WindTint")]		public float windSize = 0.5f;  //bending is size and size is bending
@@ -115,13 +112,6 @@ namespace MapMagic.Terrains
 			#if UNITY_EDITOR
 			terrain.bakeLightProbesForTrees = bakeLightProbesForTrees;
 			terrain.deringLightProbesForTrees = deringLightProbesForTrees;
-			#endif
-			#if UNITY_2021_3_OR_NEWER
-			terrain.preserveTreePrototypeLayers = preserveTreePrototypeLayers;
-			#endif
-
-			#if UNITY_2022_2_OR_NEWER
-			terrain.terrainData.SetDetailScatterMode(DetailScatterMode.InstanceCountMode);
 			#endif
 
 			terrain.terrainData.wavingGrassSpeed = windSpeed;

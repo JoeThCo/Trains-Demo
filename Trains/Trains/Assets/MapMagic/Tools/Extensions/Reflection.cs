@@ -171,7 +171,7 @@ namespace Den.Tools
 			}
 		}
 
-		public static Type[] Subtypes (this Type parent, bool allAssemblies=false, Predicate<Type> filter=null)
+		public static Type[] Subtypes (this Type parent, bool allAssemblies=false)
 		{
 			List<Type> children = new List<Type>();
 		
@@ -185,16 +185,9 @@ namespace Den.Tools
 				for (int t=0; t<types.Length; t++) 
 				{
 					Type type = types[t];
-					if (type.IsInterface || type.IsAbstract) 
-						continue;
+					if (type.IsInterface || type.IsAbstract) continue;
 
-					if (!type.IsSubclassOf(parent) && !parent.IsAssignableFrom(type)) 
-						continue;
-
-					if (filter != null  &&  !filter(type))
-						continue;
-					
-					children.Add(type);
+					if (type.IsSubclassOf(parent) || parent.IsAssignableFrom(type)) children.Add(type);
 				}
 			}
 			return children.ToArray();
@@ -277,80 +270,5 @@ namespace Den.Tools
 			foreach (PropertyInfo prop in type.UsableProperties(nonPublic:true)) prop.SetValue(obj, prop.GetValue(empty,null), null);
 		}
 
-
-		public static Dictionary<T,MethodInfo> GetAllMethodsWithAttribute<T> (Type baseTypeRef=null) where T: Attribute
-		{
-			Dictionary<T,MethodInfo> dict = new Dictionary<T, MethodInfo>();
-			if (baseTypeRef == null)
-				baseTypeRef = typeof(ReflectionExtensions);
-			string aName = baseTypeRef.Assembly.FullName;
-
-			foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
-			{
-				bool isDependent = false;
-				foreach (AssemblyName dan in a.GetReferencedAssemblies())
-					if (dan.FullName == aName) 
-						{ isDependent = true; break; }
-				if (a.FullName==aName) 
-					isDependent = true; //otherwise it will skip all editors in GUI
-				#if UNITY_2019_2_OR_NEWER //don't know if it will affect anything, but doint it just not to ruin everything
-				if (!isDependent) continue;
-				#else
-				if (!isDependent && a.FullName!=aName) continue;
-				#endif
-
-				foreach(Type t in a.GetTypes())
-				{
-					//if (!t.IsAbstract || !t.IsSealed) continue;
-
-					foreach(MethodInfo m in t.GetMethods(BindingFlags.Static | BindingFlags.Public))
-						foreach(Attribute att in m.GetCustomAttributes())
-						{
-							if (att is T tatt)
-							{
-								if (dict.ContainsKey(tatt)) 
-									Debug.LogError("Editor method is defined twice. Attach to debug."); //don't throw exception
-								else dict.Add(tatt, m);
-							}
-						}
-				}
-			}
-
-			return dict;
-		}
-
-
-		public static Dictionary<T,Type> GetAllTypesWithAttribute<T> (Type baseTypeRef=null) where T: Attribute
-		{
-			Dictionary<T,Type> dict = new Dictionary<T,Type>();
-			if (baseTypeRef == null)
-				baseTypeRef = typeof(ReflectionExtensions);
-			string aName = baseTypeRef.Assembly.FullName;
-
-			foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
-			{
-				bool isDependent = false;
-				foreach (AssemblyName dan in a.GetReferencedAssemblies())
-					if (dan.FullName == aName) 
-						{ isDependent = true; break; }
-				if (a.FullName==aName) 
-					isDependent = true; //otherwise it will skip all editors in GUI
-				#if UNITY_2019_2_OR_NEWER //don't know if it will affect anything, but doint it just not to ruin everything
-				if (!isDependent) continue;
-				#else
-				if (!isDependent && a.FullName!=aName) continue;
-				#endif
-
-				foreach(Type t in a.GetTypes())
-					foreach(Attribute att in t.GetCustomAttributes())
-						if (att is T tatt)
-						{
-							if (!dict.ContainsKey(tatt)) 
-								dict.Add(tatt, t);
-						}
-			}
-
-			return dict;
-		}
 	}
 }

@@ -163,9 +163,7 @@ namespace Den.Tools.GUI
 			Vector2 mousePos,
 			ref Rect rect,
 			int border=6,
-			Vector2 minSize = new Vector2(),
-			RectOffset additionalBottomRightMargin = null,
-			bool debug = false)
+			Vector2 minSize = new Vector2())
 		{
 			bool resized = false;
 
@@ -174,8 +172,6 @@ namespace Den.Tools.GUI
 			
 			Rect zoomedRect = UI.current.scrollZoom==null ? leftRect : UI.current.scrollZoom.ToScreen(leftRect.position, leftRect.size);
 			UnityEditor.EditorGUIUtility.AddCursorRect (zoomedRect, UnityEditor.MouseCursor.ResizeHorizontal);
-			if (debug)
-				Draw.DebugRect(zoomedRect,1, screenSpace:true);
 			
 			ObjId obj1 = new ObjId (obj, 1);
 			if (TryDrag(obj1, mousePos))
@@ -195,8 +191,6 @@ namespace Den.Tools.GUI
 
 			zoomedRect = UI.current.scrollZoom==null ? rightRect : UI.current.scrollZoom.ToScreen(rightRect.position, rightRect.size);
 			UnityEditor.EditorGUIUtility.AddCursorRect (zoomedRect, UnityEditor.MouseCursor.ResizeHorizontal);
-			if (debug)
-				Draw.DebugRect(zoomedRect,1, screenSpace:true);
 
 			ObjId obj2 = new ObjId (obj, 2);
 			if (TryDrag(obj2, mousePos))
@@ -215,8 +209,6 @@ namespace Den.Tools.GUI
 
 			zoomedRect = UI.current.scrollZoom==null ? topRect : UI.current.scrollZoom.ToScreen(topRect.position, topRect.size);
 			UnityEditor.EditorGUIUtility.AddCursorRect (zoomedRect, UnityEditor.MouseCursor.ResizeVertical);
-			if (debug)
-				Draw.DebugRect(zoomedRect,1, screenSpace:true);
 
 			ObjId obj3 = new ObjId (obj, 3);
 			if (TryDrag(obj3, mousePos))
@@ -236,8 +228,6 @@ namespace Den.Tools.GUI
 
 			zoomedRect = UI.current.scrollZoom==null ? bottomRect : UI.current.scrollZoom.ToScreen(bottomRect.position, bottomRect.size);
 			UnityEditor.EditorGUIUtility.AddCursorRect (zoomedRect, UnityEditor.MouseCursor.ResizeVertical);
-			if (debug)
-				Draw.DebugRect(zoomedRect,1, screenSpace:true);
 
 			ObjId obj4 = new ObjId (obj, 4);
 			if (TryDrag(obj4, mousePos))
@@ -256,8 +246,6 @@ namespace Den.Tools.GUI
 
 			zoomedRect = UI.current.scrollZoom==null ? topLeftRect : UI.current.scrollZoom.ToScreen(topLeftRect.position, topLeftRect.size);
 			UnityEditor.EditorGUIUtility.AddCursorRect (zoomedRect, UnityEditor.MouseCursor.ResizeUpLeft);
-			if (debug)
-				Draw.DebugRect(zoomedRect,2, screenSpace:true);
 
 			ObjId obj5 = new ObjId (obj, 5);
 			if (TryDrag(obj5, mousePos))
@@ -278,8 +266,6 @@ namespace Den.Tools.GUI
 
 			zoomedRect = UI.current.scrollZoom==null ? topRightRect : UI.current.scrollZoom.ToScreen(topRightRect.position, topRightRect.size);
 			UnityEditor.EditorGUIUtility.AddCursorRect (zoomedRect, UnityEditor.MouseCursor.ResizeUpRight);
-			if (debug)
-				Draw.DebugRect(zoomedRect,2, screenSpace:true);
 
 			ObjId obj6 = new ObjId (obj, 6);
 			if (TryDrag(obj6, mousePos))
@@ -300,8 +286,6 @@ namespace Den.Tools.GUI
 
 			zoomedRect = UI.current.scrollZoom==null ? bottomLeftRect : UI.current.scrollZoom.ToScreen(bottomLeftRect.position, bottomLeftRect.size);
 			UnityEditor.EditorGUIUtility.AddCursorRect (zoomedRect,  UnityEditor.MouseCursor.ResizeUpRight);
-			if (debug)
-				Draw.DebugRect(zoomedRect,2, screenSpace:true);
 
 			ObjId obj7 = new ObjId (obj, 7);
 			if (TryDrag(obj7, mousePos))
@@ -317,15 +301,11 @@ namespace Den.Tools.GUI
 			if (TryStart(obj7, mousePos, bottomLeftRect))
 				{ initialRect = rect; resized = true; } 
 
-			
+
 			Rect bottomRightRect = new Rect( rect.x-border + rect.width, rect.y-border + rect.height, border*2, border*2);
-			if (additionalBottomRightMargin != null)
-				bottomRightRect = bottomRightRect.Extended(additionalBottomRightMargin);
 
 			zoomedRect = UI.current.scrollZoom==null ? bottomRightRect : UI.current.scrollZoom.ToScreen(bottomRightRect.position, bottomRightRect.size);
 			UnityEditor.EditorGUIUtility.AddCursorRect (zoomedRect, UnityEditor.MouseCursor.ResizeUpLeft);
-			if (debug)
-				Draw.DebugRect(zoomedRect,3, screenSpace:true);
 
 			ObjId obj8 = new ObjId (obj, 8);
 			if (TryDrag(obj8, mousePos))

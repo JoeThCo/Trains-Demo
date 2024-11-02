@@ -17,10 +17,8 @@ namespace Den.Tools.Matrices {
 			public int length; //in case array is longer (for re-use)
 			public float[] arr;
 
-			public Stripe () { arr = new float[0]; length = 0; }
 			public Stripe (float[] arr) { this.arr = arr; length = arr.Length; }
 			public Stripe (int length) { this.length = length; arr = new float[length]; }
-			public Stripe (float[] arr, int length) { this.arr = arr; this.length = length; }
 			public Stripe (Stripe stripe) { this.arr = new float[stripe.arr.Length]; Array.Copy(stripe.arr, arr, stripe.arr.Length); length = stripe.length; }
 
 			public void Expand (int newCount) { length = newCount; Array.Resize(ref arr, length); }
@@ -783,56 +781,6 @@ namespace Den.Tools.Matrices {
 			#endif
 
 
-				public static void ResampleStripeLinearInterpolated (Stripe src, Stripe dst, double dstOffsetPercent, double dstSizePercent)
-				/// Scales the line filling dst with interpolated values. Linear for downscale
-				{
-					int dstLenMinusOne = dst.length-1;
-					int srcLenMinusOne = src.length-1;
-
-					for (int dstX=0; dstX<dst.length; dstX++)
-					{
-						//converting to src gauge
-						double dstPercent = (double)dstX / dstLenMinusOne;
-						double srcPercent = dstOffsetPercent + dstPercent*dstSizePercent;
-						double srcPixel = srcPercent * (src.length-1);
-
-						double prevDstPercent = (double)(dstX-1) / dstLenMinusOne;
-						double nextDstPercent = (double)(dstX+1) / dstLenMinusOne;
-						double prevSrcPercent = dstOffsetPercent + prevDstPercent*dstSizePercent;
-						double nextSrcPercent = dstOffsetPercent + nextDstPercent*dstSizePercent;
-						
-						int srcStartX = (int)(prevSrcPercent * srcLenMinusOne);
-						if (srcStartX < 0) srcStartX = 0;
-
-						int srcEndX = (int)(nextSrcPercent * srcLenMinusOne);
-						if (srcEndX >= src.length) srcEndX = src.length-1;
-
-
-						float val = 0;
-						float sum = 0;
-
-						for (int srcX = srcStartX; srcX <= srcEndX; srcX++)
-						{
-							//converting back to dst gauge
-							double srcPercentX = (float)srcX / srcLenMinusOne;
-							double dstPercentX = (srcPercentX - dstOffsetPercent) / dstSizePercent;
-							float refX = (float)(dstPercentX * dstLenMinusOne); //in pixels, it's a position of src pixel on dst gauge
-
-							float percent = refX - dstX;
-							if (percent > 0.999f) percent = 0.999f;
-							if (percent < -0.999f) percent = -0.999f;
-							if (percent < 0) percent = -percent;
-							percent = 1-percent;
-
-							val += src.arr[srcX] * percent;
-							sum += percent;
-						}
-
-						dst.arr[dstX] = sum!=0 ? val/sum : 0;	
-					}
-				}
-
-
 			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
 				[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "MatrixOps_ResizeNearestNeighbor")]
 				public static extern void ResizeNearestNeighbor (Matrix src, Matrix dst);
@@ -860,51 +808,9 @@ namespace Den.Tools.Matrices {
 		#endregion
 
 
-		#region ResizeInterpolated
-
-			public static void ResizeInterpolatedWithUpscale (Matrix src, Matrix dst, Vector2D dstPos, Vector2D dstSize, ref Matrix tmp)
-			/// dstPos and dstSize are dst positions and size in src coord sys, in range 0-1
-			/// will create tmp matrix with width of dst and height of src that then could be re-used
-			{
-				//checking tmp matrix
-				Coord tmpSize = new Coord(dst.rect.size.x, src.rect.size.z);
-				Coord tmpPos = new Coord(dst.rect.offset.x, src.rect.offset.z);
-				if (tmp==null  ||  tmp.rect.size != tmpSize)
-					tmp = new Matrix(tmpPos, tmpSize);
-
-				//shrinking horizontally src -> tmp
-
-
-				//shrinking vertically tmp -> dst
-
-			}
-
-
-			//#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
-			//	[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "MatrixOps_DownsizeHorizontally")]
-			//	private static extern void DownsizeHorizontally (Matrix src, Matrix dst, Stripe srcStripe, Stripe dstStripe);
-			//#else
-				private static void DownsizeInterpolatedHorizontally (Matrix src, Matrix dst, Stripe srcStripe, Stripe dstStripe, float dstOffsetPercent, float dstSizePercent)
-				{
-					srcStripe.length = src.rect.size.x;
-					dstStripe.length = dst.rect.size.x;
-
-					for (int z=0; z<src.rect.size.z; z++) //should match dst.rect.size.z
-					{
-						ReadLine(srcStripe, src, src.rect.offset.x, z+src.rect.offset.z);
-						//ResampleStripeLinearInterpolated(srcStripe, dstStripe);
-						//ResampleStripeCubic(srcStripe, dstStripe);
-						WriteLine(dstStripe, dst, dst.rect.offset.x, z+dst.rect.offset.z);
-					}
-				}
-			//#endif
-
-		#endregion
-
-
 		#region ResizeFast
 
-		public static void ResizeFast (Matrix src, Matrix dst)
+			public static void ResizeFast (Matrix src, Matrix dst)
 			/// When dstRect is 2x, 4x, etc larger or smaller
 			/// Using ResampleStripeDownFast instead of ResampleStripeCubic/Linear
 			{
@@ -1024,8 +930,7 @@ namespace Den.Tools.Matrices {
 			
 			public static void DownscaleFast (Matrix src, Matrix dst) =>  DownscaleFast (src, dst, null, null, null);
 
-			//not using native for cavity offset patch
-			/*#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
+			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
 
 				public static void DownscaleFast (Matrix src, Matrix dst, Matrix tmp=null, Stripe srcStripe=null, Stripe dstStripe=null)
 				{
@@ -1040,7 +945,7 @@ namespace Den.Tools.Matrices {
 
 				[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "MatrixOps_DownscaleFastTmp")]
 				private static extern void DownscaleFastTmp (Matrix src, Matrix dst, Matrix tmp, Stripe srcStripe, Stripe dstStripe);
-			#else*/
+			#else
 				public static void DownscaleFast (Matrix src, Matrix dst, Matrix tmp=null, Stripe srcStripe=null, Stripe dstStripe=null)
 				/// Only for cases when dst rect size is exactly twice smaller than src
 				{
@@ -1071,29 +976,27 @@ namespace Den.Tools.Matrices {
 						WriteRow(dstStripe, dst, x + dst.rect.offset.x, dst.rect.offset.z);
 					}
 				}
-			//#endif
+			#endif
 
-			//not using native for cavity offset patch
-			//#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
-			//	[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "MatrixOps_ResampleStripeDownFast")]
-			//	private static extern void ResampleStripeDownFast (Stripe src, Stripe dst);
-			//#else
+
+			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
+				[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "MatrixOps_ResampleStripeDownFast")]
+				private static extern void ResampleStripeDownFast (Stripe src, Stripe dst);
+			#else
 				private static void ResampleStripeDownFast (Stripe src, Stripe dst)
 				/// Like linear, works faster, but requires dst.size = src.size/2
 				{
 					for (int dstX=1; dstX<dst.length-1; dstX++)
 					{
 						//dst.arr[dstX] = src.arr[dstX*2]*0.5f + src.arr[dstX*2-1]*0.25f + src.arr[dstX*2+1]*0.25f;
-						//dst.arr[dstX] = src.arr[dstX*2]*0.5f + src.arr[dstX*2+1]*0.5f;
+						dst.arr[dstX] = src.arr[dstX*2]*0.5f + src.arr[dstX*2+1]*0.5f;
 							//surprizingly this way it generates no offset
-						dst.arr[dstX] = src.arr[dstX*2]*0.5f + src.arr[dstX*2-1]*0.5f;
-							//surprasingly it had offset in 2.1.15, but -1 doesn't
 					}
 
 					dst.arr[0] = src.arr[0]*0.75f + src.arr[1]*0.25f;
 					dst.arr[dst.length-1] = src.arr[src.length-1]*0.75f + src.arr[src.length-2]*0.25f;
 				}
-			//#endif
+			#endif
 
 
 			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
@@ -1351,10 +1254,10 @@ namespace Den.Tools.Matrices {
 					OverblurMippedIteration(mips[i+1], mips[i], tmp, srcStripe, dstStripe, escalate);
 			}
 
-//			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
-//				[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "MatrixOps_OverblurMippedIteration")]
-//				public static extern void OverblurMippedIteration (Matrix mip, Matrix mat, Matrix tmp, Stripe srcStripe, Stripe dstStripe, float escalate);
-//			#else
+			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
+				[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "MatrixOps_OverblurMippedIteration")]
+				public static extern void OverblurMippedIteration (Matrix mip, Matrix mat, Matrix tmp, Stripe srcStripe, Stripe dstStripe, float escalate);
+			#else
 				private static void OverblurMippedIteration (Matrix mip, Matrix mat, Matrix tmp, Stripe srcStripe, Stripe dstStripe, float escalate)
 				{
 					srcStripe.length = mip.rect.size.x;
@@ -1375,7 +1278,7 @@ namespace Den.Tools.Matrices {
 						OverlayRow(dstStripe, mat, x, mat.rect.offset.z, escalate);
 					}
 				}
-//			#endif
+			#endif
 
 		#endregion
 

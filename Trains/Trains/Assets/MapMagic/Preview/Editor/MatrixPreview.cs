@@ -99,7 +99,6 @@ namespace MapMagic.Previews
 				Window?.Repaint();
 			}
 
-
 		#endregion
 
 		#region Terrain
@@ -121,17 +120,11 @@ namespace MapMagic.Previews
 				{
 					Shader shader;
 					#if UNITY_2019_2_OR_NEWER
-					Material defaultTerrainMat = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline?.defaultTerrainMaterial;
-					string pipelineName = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline?.name;
-
-					if ( (defaultTerrainMat != null  &&  defaultTerrainMat.shader.name.Contains("Universal Render Pipeline")) ||  //"Universal Render Pipeline/Terrain/Lit"
-						 (pipelineName != null && pipelineName.Contains("URP")) ) //"URP-HighFidelity"
-							shader = Shader.Find("MapMagic/TerrainPreviewURP");
-
-					else if ( (defaultTerrainMat != null  &&  defaultTerrainMat.shader.name.Contains("HDRP")) ||  //"HDRP/TerrainLit (UnityEngine.Shader)"
-						 (pipelineName != null && pipelineName.Contains("HDR")) )  //"HDRenderPipelineAsset"
+					Material defaultTerrainMat = UnityEngine.Rendering.GraphicsSettings.renderPipelineAsset?.defaultTerrainMaterial;
+					if (defaultTerrainMat != null  &&  defaultTerrainMat.shader.name.Contains("Universal Render Pipeline"))
+						shader = Shader.Find("MapMagic/TerrainPreviewURP");
+					else if (defaultTerrainMat != null  &&  defaultTerrainMat.shader.name.Contains("HDRP"))
 						shader = Shader.Find("MapMagic/TerrainPreviewHDRP"); 
-
 					else
 					#endif
 						shader = Shader.Find("MapMagic/TerrainPreview");

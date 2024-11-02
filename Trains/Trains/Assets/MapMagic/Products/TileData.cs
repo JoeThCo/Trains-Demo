@@ -36,7 +36,7 @@ namespace MapMagic.Products
 		public bool isDraft; //is this terrain low-detail (to avoid applying objects and grass)?
 
 		//per-graph products
-		private Dictionary<ulong,ulong> lastVersion = new Dictionary<ulong, ulong>();
+		private HashSet<ulong> ready = new HashSet<ulong>();  //generators that have actual products in all outlets, even if they are null
 		private Dictionary<ulong,float> progress = new Dictionary<ulong,float>();
 		private Dictionary<ulong,object> prepare = new Dictionary<ulong, object>();
 		private Dictionary<ulong,object> products = new Dictionary<ulong,object>();	//per-outlet intermediate results
@@ -64,12 +64,12 @@ namespace MapMagic.Products
 			public TileData CreateLoadSubData (ulong biomeId, MatrixWorld mask)
 			/// Creates/loads sub-data and assigns biome mask
 			{
-				if (!subDatas.TryGetValue(biomeId, out TileData subData))  //sometimes stored area is null on clearing, function node can't generate
+				if (!subDatas.TryGetValue(biomeId, out TileData subData))
 				{
 					subData = (TileData)this.MemberwiseClone();
 					//taking finalize, apply, height by reference from parent data
 
-					subData.lastVersion = new Dictionary<ulong, ulong>();
+					subData.ready = new HashSet<ulong>();
 					subData.products = new Dictionary<ulong, object>();
 					subData.prepare = new Dictionary<ulong, object>();
 					subData.products = new Dictionary<ulong, object>();
@@ -82,11 +82,6 @@ namespace MapMagic.Products
 				}
 
 				subData.biomeMask = mask;
-
-				if (subData.area == null) subData.area = area;
-				if (subData.globals == null) subData.globals = globals;
-				if (subData.random == null) subData.random = random;
-				//these were added to fix node remove bug when using function. For some reason stored data on clearing has no defaults
 
 				return subData;
 			}
@@ -131,90 +126,48 @@ namespace MapMagic.Products
 
 		#endregion
 
-        #region Version Ready
+		#region Ready & Progress
 
-			public bool IsReady (ulong genId, ulong version)
-			{
-				bool inDict = lastVersion.TryGetValue(genId, out ulong lastVer);
-				if (inDict) 
-					return version == lastVer;
-				return false;
-			}
+			public bool IsReady (ulong genId)  =>  ready.Contains(genId);
+			
+			public bool IsReady (Generator gen)  =>  ready.Contains(gen.id);
 
-			public bool IsReady (Generator gen)
+			public void MarkReady (ulong genId) 
 			{
-				bool inDict = lastVersion.TryGetValue(gen.id, out ulong lastVer);
-				if (inDict) 
-					return gen.version == lastVer;
-				return false;
-			}
-
-			public bool VersionChanged (Generator gen)
-			/// True only if this node version was changed (to determine this node change for biome)
-			{
-				bool inDict = lastVersion.TryGetValue(gen.id, out ulong lastVer);
-				if (inDict) 
-					return true;
-				return gen.version == lastVer;
-			}
-
-			#if MM_DEBUG
-			public ulong? Version (Generator gen) 
-			{
-				bool inDict = lastVersion.TryGetValue(gen.id, out ulong lastVer);
-				if (!inDict) 
-					return null;
-				else
-					return lastVer;
-			}
-			#endif
-
-			public void MarkReady (ulong genId, ulong version) 
-			{
-				if (!lastVersion.ContainsKey(genId))
-					lastVersion.Add(genId, version);
-				else
-					lastVersion[genId] = version;
+				if (!ready.Contains(genId))
+					ready.Add(genId);
 			}
 
 			public void MarkReady (Generator gen) 
 			{
-				if (!lastVersion.ContainsKey(gen.id))
-					lastVersion.Add(gen.id, gen.version);
-				else
-					lastVersion[gen.id] = gen.version;
+				if (!ready.Contains(gen.id))
+					ready.Add(gen.id);
 			}
 
-			public void ClearReady (ulong genId) 
+			public void ClearReady (ulong genId)  =>  ready.Remove(genId);
+
+			public void ClearReady (Generator gen)  =>  ready.Remove(gen.id);
+
+			public void SetProgress (ICustomComplexity cc, float progress)
 			{
-				#if MM_DEBUG
-				//Log.AddThreaded("TileData.ClearReady genId", ("coord:",area.Coord), ("draft:",isDraft));
-				#endif
-
-				lastVersion.Remove(genId);
+				Generator gen = (Generator)cc;
+				if (this.progress.ContainsKey(gen.id)) this.progress[gen.id] = progress;
+				else this.progress.Add(gen.id, progress);
 			}
 
-			public void ClearReady (Generator gen)
+			public float GetProgress (ICustomComplexity cc)
 			{
-				#if MM_DEBUG
-				//Log.AddThreaded("TileData.ClearReady gen", ("coord:",area.Coord), ("draft:",isDraft), ("node:",gen.GetType().Name));
-				#endif
-
-				lastVersion.Remove(gen.id);
+				Generator gen = (Generator)cc;
+				if (this.progress.TryGetValue(gen.id, out float progress)) return progress;
+				else return 0;
 			}
+
 
 			public bool AreAllRelevantReady (Graph graph, bool inSubs=false)
 			{
 				foreach (Generator gen in graph.RelevantGenerators(isDraft))
-				{
-					bool inDict = lastVersion.TryGetValue(gen.id, out ulong lastVer);
-					
-					if (!inDict) 
+					if (!ready.Contains(gen.id)) 
 						return false;
-					else
-						if (gen.version != lastVer)
-							return false;
-				}
 
 				if (inSubs)
 					foreach (IBiome biome in graph.UnitsOfType<IBiome>())
@@ -243,16 +196,9 @@ namespace MapMagic.Products
 				{
 					//if enabled level output is NOT ready
 					if (outGen.enabled && 
-						outGen.OutputLevel.HasFlag(level))
-						{
-							bool inDict = lastVersion.TryGetValue(outGen.id, out ulong lastVer);
-					
-							if (!inDict) 
-								return false;
-							else
-								if (outGen.version != lastVer)
-									return false;
-						}
+						outGen.OutputLevel.HasFlag(level)  &&
+						!ready.Contains(outGen.id) )
+							return false;
 				}
 
 				if (inSubs)
@@ -266,10 +212,9 @@ namespace MapMagic.Products
 						//Fails in draft when cleared while generating biome - some internal outputs might not be ready
 						//While biome switches to ready on finish, and it is skipped with next wave of generate (after clear)
 						//So drafts are using hacky simplified check
-						//Update: might work okay with new clear sys
 						if (isDraft)
 						{
-							if (!IsReady(biome.Gen))
+							if (!ready.Contains(biome.Gen.Id))
 								return false;
 						}
 
@@ -288,15 +233,16 @@ namespace MapMagic.Products
 			}
 
 
+
 			public string[] DebugReadyVar => DebugReady(Graph.debugGraph, false);
 			public string[] DebugReady (Graph rootGraph, bool useGraphName=true)
 			/// Returns the names of graphs, generators and layers that are marked as ready
 			/// Disable graph name when running from thread
 			{
-				string[] debugs = new string[lastVersion.Count];
+				string[] debugs = new string[ready.Count];
 
 				int i=0;
-				foreach (ulong id in lastVersion.Keys)
+				foreach (ulong id in ready)
 				{
 					debugs[i] = rootGraph.DebugUnitName(id,useGraphName);
 					if (debugs[i] == null) 
@@ -308,23 +254,7 @@ namespace MapMagic.Products
 				return debugs;
 			}
 
-		#endregion
 
-        #region Progress
-
-        public void SetProgress (ICustomComplexity cc, float progress)
-			{
-				Generator gen = (Generator)cc;
-				if (this.progress.ContainsKey(gen.id)) this.progress[gen.id] = progress;
-				else this.progress.Add(gen.id, progress);
-			}
-
-			public float GetProgress (ICustomComplexity cc)
-			{
-				Generator gen = (Generator)cc;
-				if (this.progress.TryGetValue(gen.id, out float progress)) return progress;
-				else return 0;
-			}
 
 		#endregion
 
@@ -394,6 +324,7 @@ namespace MapMagic.Products
 			public int ProductsCount  =>  products.Count;
 
 			public void ClearProducts ()  => products.Clear();
+
 
 			public string[] DebugProductsVar => DebugProducts(Graph.debugGraph, false);
 			public string[] DebugProducts (Graph rootGraph, bool useGraphName=true)
@@ -635,7 +566,7 @@ namespace MapMagic.Products
 		public void Clear (bool clearApply=true, bool inSubs=false)
 		/// Clears all of the unnecessary data in playmode
 		{
-			lastVersion.Clear();
+			ready.Clear();
 			products.Clear();
 			prepare.Clear();
 			outputs.Clear();
@@ -658,7 +589,7 @@ namespace MapMagic.Products
 
 		public void Remove (Generator gen, bool inSubs=false)
 		{
-			lastVersion.Remove(gen.id);
+			ready.Remove(gen.id);
 			products.Remove(gen.id);
 			prepare.Remove(gen.id);
 			outputs.Remove(gen.id);
@@ -673,23 +604,20 @@ namespace MapMagic.Products
 					subData.Remove(gen, inSubs:inSubs);
 		}
 
-
-		public void ClearStray (Graph graph, bool inSubs=false)
-		/// Clears products that are not in graph
-		/// Performance checked: 40ms per 1000 iterations on TutorialSplines graph
+		public void RemoveNotContained (Graph graph, bool inSubs=false)
 		{
+			//TODO: can return System.InvalidOperationException: Collection was modified; enumeration operation may not execute.
+
 			HashSet<ulong> unitsIds = new HashSet<ulong>();
 			foreach (IUnit unit in graph.AllUnits())
 				unitsIds.Add(unit.Id);
 
-			lastVersion.RemoveNotContained(unitsIds);
-			products.RemoveNotContained(unitsIds);
-			prepare.RemoveNotContained(unitsIds);
-			outputs.RemoveNotContained(unitsIds);
+			bool NotContainedId (ulong id) => !unitsIds.Contains(id);
 
-			if (inSubs)
-				foreach ((Graph subGraph, TileData subData) in Graph.AllGraphsDatas(graph,this))
-					subData.ClearStray(subGraph, inSubs:inSubs);
+			ready.RemoveWhere(NotContainedId);
+			products.RemoveWhere(NotContainedId);
+			prepare.RemoveWhere(NotContainedId);
+			outputs.RemoveWhere(NotContainedId);
 		}
 
 

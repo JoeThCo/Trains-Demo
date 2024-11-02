@@ -62,7 +62,7 @@
 
     SubShader
     {
-        Tags { "Queue" = "Geometry-100" "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "IgnoreProjector" = "False" "TerrainCompatible" = "True"}
+        Tags { "Queue" = "Geometry-100" "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "IgnoreProjector" = "False"}
 
         Pass
         {
@@ -117,12 +117,7 @@
 
 			half4 SplatmapFragment_Preview(Varyings IN) : SV_TARGET
 			{
-                #ifdef TERRAIN_GBUFFER
 				half4 src = SplatmapFragment(IN);
-                #else
-                half4 src;
-                SplatmapFragment(IN, src);
-                #endif
 
 				float2 uv = IN.uvMainAndLM;
 				float2 pxTexSize = _Preview_TexelSize.zw - _Margins * 2 - 1; //texture size without margins. Don't actually know why -1, related with 513

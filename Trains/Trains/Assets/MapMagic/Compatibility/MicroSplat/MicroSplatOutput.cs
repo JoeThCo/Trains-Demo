@@ -14,8 +14,7 @@ using MapMagic.Products;
 using JBooth.MicroSplat;
 #endif
 
-namespace MapMagic.Nodes.MatrixGenerators 
-{
+namespace MapMagic.Nodes.MatrixGenerators {
 	[System.Serializable]
 	[GeneratorMenu(
 		menu = "Map/Output", 
@@ -151,8 +150,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 					splats = splats3D, 
 					prototypes = tlayers, 
 					assignComponent = data.globals.assignComponent,
-					propData = data.globals.microSplatPropData as MicroSplatPropData,
-					texArrCfg = data.globals.microSplatTexArrConfig as TextureArrayConfig};
+					propData = data.globals.microSplatPropData as MicroSplatPropData};
 
 				Graph.OnOutputFinalized?.Invoke(typeof(CustomShaderOutput200), data, applyData, stop);
 				data.MarkApply(applyData);
@@ -175,7 +173,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 
 			public bool assignComponent;
 			public MicroSplatPropData propData;
-			public TextureArrayConfig texArrCfg;
 
 			public override void Apply (Terrain terrain)
 			{
@@ -197,10 +194,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				base.Apply(terrain);
 
 				if (assignComponent)
-				{
 					mso.Sync();
-					RestorePrototypes(terrain, texArrCfg, uvScales:(Vector2)terrain.materialTemplate.GetVector("_UVScale"));
-				}
 			}
 
 			#endif
@@ -317,7 +311,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				mso.matInstance = terrain.materialTemplate;
 
 			if (mso.keywordSO == null)
-				mso.keywordSO = ScriptableObject.CreateInstance<MicroSplatKeywords>();
+				mso.keywordSO = new MicroSplatKeywords();
 
 			return mso;
 		}
@@ -326,7 +320,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 
 		public class TmpApplyData// : IApplyData
 		{
-			#if __MICROSPLAT__
+            #if __MICROSPLAT__
 
 			public Color[][] colors; // TODO: use raw texture bytes
 
@@ -414,116 +408,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				else return (int)Mathf.Sqrt(colors[0].Length);
 			}}
 
-			#endif
-		}
-
-		public static void RestorePrototypes (Terrain terrain, TextureArrayConfig cfg, Vector2 uvScales=new Vector2())
-		//This is a copy of MicroSplatTerrain.RestorePrototypes()
-		//however newer MS versions have a check that prevents working in playmode, this doesn't apply prototypes to newly created terrain
-		//so doing it manually
-		{
-			if (cfg == null)
-				return;
-			
-			int count = cfg.sourceTextures.Count;
-			if (count > 32)
-				count = 32;
-
-			#if __MICROSPLAT_SLOPETEXTURE__
-			if (count > cfg.maxSyncCount)
-				count = cfg.maxSyncCount;
-			#endif
-
-			var protos = terrain.terrainData.terrainLayers;
-				  
-			bool needsRefresh = false;
-			if (protos.Length != count)
-				 needsRefresh = true;
-
-			if (!needsRefresh)
-			{
-				for (int i = 0; i < protos.Length; ++i)
-				{
-					if (protos[i] == null)
-					{
-						needsRefresh = true;
-						break;
-					}
-					if (protos[i] != null && cfg.sourceTextures[i] != null && protos[i].diffuseTexture != cfg.sourceTextures[i].diffuse)
-					{
-						needsRefresh = true;
-						break;
-					}
-				}
-			}
-
-			if (!needsRefresh)
-				return;
-
-			//Vector4 uvScalesV4 = templateMaterial.GetVector("_UVScale");
-			//Vector2 uvScales = new Vector2(uvScalesV4.x, uvScalesV4.y);
-			if (uvScales.x + uvScales.y < 0.0001f)
-				uvScales = new Vector2(1,1);
-
-			uvScales = MicroSplatRuntimeUtil.UVScaleToUnityUVScale(uvScales, terrain);
-
-			protos = new TerrainLayer[count];
-			for (int i = 0; i < count; ++i)
-			{
-				#if UNITY_EDITOR
-				string path = UnityEditor.AssetDatabase.GetAssetPath(cfg);
-				path = path.Replace("\\", "/");
-				path = path.Substring(0, path.LastIndexOf("/"));
-				#endif
-
-				if (cfg.sourceTextures[i].terrainLayer == null || cfg.sourceTextures[i].terrainLayer.diffuseTexture != cfg.sourceTextures[i].diffuse)
-				{
-					#if UNITY_EDITOR
-					path += "/microsplat_layer_";
-					path = path.Replace("//", "/");
-
-					if (cfg.sourceTextures[i].diffuse != null)
-					{
-						path += cfg.sourceTextures[i].diffuse.name;
-					}
-					path += "_" + i;
-					path += ".terrainlayer";
-					#endif
-
-					TerrainLayer sp = new TerrainLayer();
-
-					sp.diffuseTexture = cfg.sourceTextures[i].diffuse;
-					sp.tileSize = uvScales;
-					/*if (keywordSO.IsKeywordEnabled("_PERTEXUVSCALEOFFSET"))
-					{
-						Color c = propData.GetValue(i, 0);
-						Vector2 ptScale = new Vector2(c.r, c.b);
-						sp.tileSize = MicroSplatRuntimeUtil.UVScaleToUnityUVScale(uvScales * ptScale, terrain);
-					}*/
-
-					cfg.sourceTextures[i].terrainLayer = sp;
-					protos[i] = sp;
-
-					#if UNITY_EDITOR
-					UnityEditor.EditorApplication.delayCall += () =>
-					{
-						UnityEditor.AssetDatabase.CreateAsset(sp, path);
-					};
-					#endif
-
-				}
-				else
-				{
- 					protos[i] = cfg.sourceTextures[i].terrainLayer;
-				}	
-			}
-
-			terrain.terrainData.terrainLayers = protos;
-
-			#if UNITY_EDITOR
-			UnityEditor.EditorUtility.SetDirty(terrain);
-			UnityEditor.EditorUtility.SetDirty(terrain.terrainData);
-			#endif
+            #endif
 		}
 	}
 }

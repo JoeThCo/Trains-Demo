@@ -181,26 +181,9 @@ namespace MapMagic.Nodes.GUI
 						using (Cell.LinePx(18+18)) Draw.Label("Not assigned to current \nMapMagic object");
 
 					using (Cell.LineStd) Draw.Field(ref heightOut.outputLevel, "Out Level");
-				}
-			}
-		}
 
-		[Draw.Editor(typeof(MatrixGenerators.HolesOutput2112))]
-		public static void HeightOutputEditor (MatrixGenerators.HolesOutput2112 holesOut)
-		{
-			using (Cell.Padded(1,1,0,0))
-			{
-				using (Cell.LinePx(0))
-				{
-					Cell.current.fieldWidth = 0.4f;
-
-					if (GraphWindow.current.mapMagic != null)
-					{
-						//using (Cell.LineStd) GeneratorDraw.DrawGlobalVar(ref GraphWindow.current.mapMagic.Globals.holesRes, "Resolution");
-						//there's no way to change holes resolution with script yey. It's always height-1.
-					}
-					else
-						using (Cell.LinePx(18+18)) Draw.Label("Not assigned to current \nMapMagic object");
+					if (Cell.current.valChanged)
+						GraphWindow.current?.RefreshMapMagic(heightOut);
 				}
 			}
 		}
@@ -214,6 +197,9 @@ namespace MapMagic.Nodes.GUI
 				{
 					Draw.AnimationCurve(gen.curve);
 					Draw.AddFieldToCellObj(typeof(MatrixGenerators.UnityCurve200), "curve");
+
+					if (Cell.current.valChanged)
+						GraphWindow.current?.RefreshMapMagic(gen);
 				}
 		}
 
@@ -361,11 +347,6 @@ namespace MapMagic.Nodes.GUI
 						case MatrixGenerators.GrassOutput200.GrassRenderMode.MeshVertexLit: grassOut.prototype.renderMode = DetailRenderMode.VertexLit; break;
 						case MatrixGenerators.GrassOutput200.GrassRenderMode.MeshUnlit: grassOut.prototype.renderMode = DetailRenderMode.Grass; break;
 					}
-
-					#if UNITY_2021_2_OR_NEWER
-					if (Cell.current.valChanged)
-						grassOut.prototype.useInstancing = false;
-					#endif
 				}
 
 				using (Cell.LinePx(0))
@@ -376,11 +357,6 @@ namespace MapMagic.Nodes.GUI
 					using (Cell.LineStd) grassOut.prototype.dryColor = Draw.Field(grassOut.prototype.dryColor, "Dry");
 					using (Cell.LineStd) grassOut.prototype.healthyColor = Draw.Field(grassOut.prototype.healthyColor, "Healthy");
 
-					#if UNITY_2022_2_OR_NEWER
-					using (Cell.LineStd) grassOut.prototype.alignToGround = Draw.Field(grassOut.prototype.alignToGround, "Align Ground");
-					using (Cell.LineStd) grassOut.prototype.positionJitter = Draw.Field(grassOut.prototype.positionJitter, "Pos Jitter");
-					#endif
-
 					Vector2 temp = new Vector2(grassOut.prototype.minWidth, grassOut.prototype.maxWidth);
 					using (Cell.LineStd) Draw.Field(ref temp, "Width", xName:"Min", yName:"Max", xyWidth:25);
 					grassOut.prototype.minWidth = temp.x; grassOut.prototype.maxWidth = temp.y;
@@ -389,44 +365,17 @@ namespace MapMagic.Nodes.GUI
 					using (Cell.LineStd) Draw.Field(ref temp, "Height", xName:"Min", yName:"Max", xyWidth:25);
 					grassOut.prototype.minHeight = temp.x; grassOut.prototype.maxHeight = temp.y;
 
-					Cell.EmptyLinePx(2);
-					using (Cell.LinePx(0))
-						using (new Draw.FoldoutGroup(ref grassOut.guiAdvanced, "Advanced", padding:0))
-							if (grassOut.guiAdvanced)
-							{
-								using (Cell.LineStd) grassOut.prototype.noiseSpread = (float)Draw.Field(grassOut.prototype.noiseSpread, "Noise");
+					using (Cell.LineStd) grassOut.prototype.noiseSpread = (float)Draw.Field(grassOut.prototype.noiseSpread, "Noise");
 
-								#if UNITY_2021_2_OR_NEWER
-								using (Cell.LineStd) 
-								{
-									bool instancing = Draw.ToggleLeft(grassOut.prototype.useInstancing, "Use Instancing");
+					#if UNITY_2021_2_OR_NEWER
+					using (Cell.LineStd) grassOut.prototype.useInstancing = Draw.Toggle(grassOut.prototype.useInstancing, "Use Instancing");
+					#endif
 
-									if (Cell.current.valChanged && instancing && grassOut.prototype.renderMode != DetailRenderMode.VertexLit)
-									{
-										string text = "Unity DetailPrototype.useInstancing documentation states that this setting is only effective when you specify VertexLit as the renderMode. Enabling this will make Unity crash on generate. Are you sure you wish to continue?";
-										instancing = UnityEditor.EditorUtility.DisplayDialog("Enable Instancing", text, "Yes, enable instancing", "Cancel");
-									}
-
-									grassOut.prototype.useInstancing = instancing;
-
-								}
-								#endif
-
-								#if UNITY_2022_2_OR_NEWER
-								using (Cell.LineStd) 
-									grassOut.prototype.useDensityScaling = Draw.ToggleLeft(grassOut.prototype.useDensityScaling, "Use Density Scaling");
-								#endif
-
-								if (GraphWindow.current.mapMagic != null  &&  GraphWindow.current.mapMagic is MapMagicObject mapMagicObject)
-								{
-									using (Cell.LineStd) GeneratorDraw.DrawGlobalVar(ref mapMagicObject.globals.grassResDownscale, "Downscale");
-									using (Cell.LineStd) GeneratorDraw.DrawGlobalVar(ref mapMagicObject.globals.grassResPerPatch, "Res/Patch");
-						
-									#if UNITY_2022_2_OR_NEWER
-									using (Cell.LineStd) GeneratorDraw.DrawGlobalVar(ref mapMagicObject.globals.grassScatterMode, "Scatter Mode");
-									#endif
-								}
-							}
+					if (GraphWindow.current.mapMagic != null  &&  GraphWindow.current.mapMagic is MapMagicObject mapMagicObject)
+					{
+						using (Cell.LineStd) GeneratorDraw.DrawGlobalVar(ref mapMagicObject.globals.grassResDownscale, "Downscale");
+						using (Cell.LineStd) GeneratorDraw.DrawGlobalVar(ref mapMagicObject.globals.grassResPerPatch, "Res/Patch");
+					}
 				}
 			}
 		}

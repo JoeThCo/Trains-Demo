@@ -612,9 +612,6 @@ namespace Den.Tools.Splines
 					FillLinearLengthLut();
 				else
 					FillApproxLengthLut(iterations, tmp);
-
-				if (length < linearLength) //hack: FillLinearLengthLut returns 0 sometimes. Anyways beizer segment can't be shorter than linear
-					length = linearLength;
 			}
 
 

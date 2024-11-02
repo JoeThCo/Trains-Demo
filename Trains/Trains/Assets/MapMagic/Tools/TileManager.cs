@@ -26,10 +26,6 @@ namespace Den.Tools
 		public object gridLocker = new object();
 
 		public bool allowMove = false;
-
-		public bool generateLimited = true;
-		public Vector2D generateCenter;
-
 		public bool generateInfinite = true;
 		public int generateRange = 2;
 		public int retainMargin = 1;
@@ -37,9 +33,6 @@ namespace Den.Tools
 		public bool genAroundMainCam = true;
 		public bool genAroundObjsTag = false;
 		public string genAroundTag = null;
-		public bool genAroundCoordinate = false;
-		public Coord genCoordinate;
-
 
 		[System.NonSerialized] protected Coord[] camCoords = null;
 		//[System.NonSerialized] protected CoordRect[] deployRects;  //used to find chunks difference and for Unpin
@@ -98,8 +91,6 @@ namespace Den.Tools
 		#region Per-frame/Update
 
 			public void Update (Vector3 tileSize, Dictionary<Coord,T> pinned=null, MonoBehaviour holder=null, bool distsOnly=false)
-			/// Holder is an object who's coordsys is used. Not necessary parent
-			/// DistsOnly will just refresh coords without deploy. In MM case distsOnly = !playmode
 			{
 				Profiler.BeginSample("Remove Nulls");
 				RemoveNulls(); //excluding removed objects
@@ -111,8 +102,7 @@ namespace Den.Tools
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Deploy");
-				if (!distsOnly && (generateInfinite || generateLimited)) Deploy(camCoords, pinned:pinned, holder:holder);
-
+				if (!distsOnly && generateInfinite) Deploy(camCoords, pinned:pinned, holder:holder);
 				Profiler.EndSample();
 
 				Profiler.BeginSample("ChangeDists");
@@ -156,20 +146,14 @@ namespace Den.Tools
 				{
 					//finding objects with tag
 					GameObject[] taggedObjects = null;
-					if (genAroundObjsTag) 
-						taggedObjects = GameObject.FindGameObjectsWithTag(genAroundTag);
+					if (genAroundTag!=null && genAroundTag.Length!=0) taggedObjects = GameObject.FindGameObjectsWithTag(genAroundTag);
 
 					//calculating cams array length and rescaling it
 					int camsLength = 0;
 					if (genAroundMainCam) camsLength++;
 					if (taggedObjects !=null) camsLength += taggedObjects.Length;
-					if (genAroundCoordinate) camsLength++;
 
-					if (camCoords == null || camsLength != camCoords.Length) 
-					{
-						camCoords = new Coord[camsLength]; 
-						coordsChanged = true; 
-					}
+					if (camCoords == null || camsLength != camCoords.Length) { camCoords = new Coord[camsLength]; coordsChanged = true; }
 				
 					if (camsLength == 0) 
 						//throw new Exception("TileManager: No Camera in scene to generate tiles.");
@@ -200,8 +184,6 @@ namespace Den.Tools
 							Coord objCoord = Coord.Floor(objPos.x/tileSize, objPos.z/tileSize);
 							if (camCoords[i+counter] != objCoord) { camCoords[i+counter] = objCoord; coordsChanged = true; }
 						}
-					if (genAroundCoordinate)
-						camCoords[camCoords.Length-1] = genCoordinate;
 				}
 
 				return coordsChanged;

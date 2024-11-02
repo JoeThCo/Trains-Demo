@@ -18,9 +18,7 @@ namespace Den.Tools.GUI
 		public const int defaultToolbarFontSize = 9;
 
 		private bool initializedAsPro; //is currently initialized as pro skin
-		public bool isPro; //= UnityEditor.EditorGUIUtility.isProSkin //can switch to non-pro for some windows
-		private bool overrideProNonpro;
-		private bool overrideIsPro;
+		public static bool isPro; //= UnityEditor.EditorGUIUtility.isProSkin
 		
 		public Color FontColor
 		{get{
@@ -29,7 +27,6 @@ namespace Den.Tools.GUI
 
 
 		public GUIStyle label; 
-		public GUIStyle labelWordWrap; 
 		public GUIStyle boldLabel; 
 		public GUIStyle centerLabel; 
 		public GUIStyle boldMiddleCenterLabel; 
@@ -67,34 +64,23 @@ namespace Den.Tools.GUI
 		public static Texture2D enumSign;
 		//public static Texture2D toggleTex;
 		public static Texture2D objectPickerTex;
-		public static Texture2D editTex;
-		public static Texture2D palleteTex;
 
 
 		public void CheckInit () 
 		{
-			isPro = overrideProNonpro ? overrideIsPro : UnityEditor.EditorGUIUtility.isProSkin;
+			isPro = UnityEditor.EditorGUIUtility.isProSkin;
 
 			if (label == null  ||  initializedAsPro != isPro  ||  bigLabel.font == null) 
 				Init();
 		}
 
-		public void OverridePro (bool isPro) 
-		{
-			overrideProNonpro = true;
-			overrideIsPro = isPro;
-			CheckInit();
-		}
-
-		private void Init ()
+		public void Init ()
 		{
 			lastZoom = 1; //resetting zoom cache since all styles will be rescaled
 
 			label = new GUIStyle(UnityEditor.EditorStyles.label); 
 			label.normal.textColor = label.focused.textColor = label.active.textColor = FontColor; //no focus
 			label.fontSize = defaultFontSize;
-
-			labelWordWrap = new GUIStyle(UnityEditor.EditorStyles.wordWrappedLabel);
 
 			boldLabel = new GUIStyle(label);
 			boldLabel.fontStyle = FontStyle.Bold;
@@ -191,7 +177,7 @@ namespace Den.Tools.GUI
 			Texture2D buttonActiveTexture = TexturesCache.LoadTextureAtPath("DPUI/Backgrounds/ButtonActive");
 			button.normal.background = buttonTexture;
 			button.onNormal.background = buttonPressedTexture;
-			button.border = new RectOffset(4,4,4,4);
+			button.border = new RectOffset(2,2,2,2);
 			button.overflow.bottom = 0;
 
 			//#if !UNITY_2019_3_OR_NEWER
@@ -241,8 +227,6 @@ namespace Den.Tools.GUI
 			enumSign = TexturesCache.LoadTextureAtPath("DPUI/Icons/Enum");
 			//toggleTex = TexturesCache.LoadTextureAtPath("DPUI/Icons/Toggle");
 			objectPickerTex = TexturesCache.LoadTextureAtPath("DPUI/Icons/ObjectPicker");
-			editTex = TexturesCache.LoadTextureAtPath("DPUI/Icons/Edit");
-			palleteTex = TexturesCache.LoadTextureAtPath("DPUI/Icons/Pallete");
 
 			PopulateFontSizes();
 			initializedAsPro = isPro;
@@ -265,12 +249,6 @@ namespace Den.Tools.GUI
 				if (style.fontSize == 0) continue;
 				fontsSizes.Add(style, style.fontSize);
 			}
-		}
-
-		public void AddStyleToResize (GUIStyle style)
-		{
-			if (fontsSizes.ContainsKey(style)) return;
-			fontsSizes.Add(style, style.fontSize);
 		}
 
 		private float lastZoom = 1;

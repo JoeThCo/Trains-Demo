@@ -51,10 +51,5 @@ namespace Den.Tools.GUI
 
 			EditorUtility.SetDirty(undoObject);
 		}
-
-		public void SetDirty ()
-		{
-			EditorUtility.SetDirty(undoObject);
-		}
 	}
 }

@@ -125,23 +125,6 @@ namespace Den.Tools
 
 		public static void TryRemove<TKey,TValue> (this Dictionary<TKey,TValue> dict, TKey key) { if (dict.ContainsKey(key)) dict.Remove(key); }
 		
-		public static void RemoveNotContained<TKey,TValue> (this Dictionary<TKey,TValue> dict, HashSet<TKey> contained)
-		/// Removes everything but what is inside Contained
-		{
-			List<TKey> keysToRemove = null;
-
-			foreach (TKey key in dict.Keys)
-				if (!contained.Contains(key))
-				{
-					if (keysToRemove == null) keysToRemove = new List<TKey>(); //create list only if there's something to remove
-					keysToRemove.Add(key);
-				}
-
-			if (keysToRemove != null)
-				foreach (TKey key in keysToRemove)
-					dict.Remove(key);
-		}
-
 		public static void RemoveWhere<TKey,TValue> (this Dictionary<TKey,TValue> dict, Predicate<TKey> predicate)
 		{
 			List<TKey> keysToRemove = null;

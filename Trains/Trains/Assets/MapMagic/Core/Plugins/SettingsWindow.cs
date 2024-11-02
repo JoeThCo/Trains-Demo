@@ -38,13 +38,12 @@ namespace MapMagic.GUI
 			public bool microSplat;
 			public bool rtp;
 			public bool vsPro;
-			public bool splinePackage;
 
 			public bool autoRef;
 
 			public object Clone() => this.MemberwiseClone();
 			public void DisableCompatibility () 
-				{ cts=false; megaSplat=false; microSplat=false; rtp=false; vsPro=false; splinePackage=false; }
+				{ cts=false; megaSplat=false; microSplat=false; rtp=false; vsPro=false; }
 		}
 
 		private Settings current;
@@ -123,7 +122,6 @@ namespace MapMagic.GUI
 					if (!changed.autoRef) 
 						changed.DisableCompatibility();
 					EditorGUILayout.LabelField("Compatibility");
-					DrawToggle(current.splinePackage, ref changed.splinePackage, "Unity Splines Package");
 					DrawToggle(current.cts, ref changed.cts, "CTS 2019");
 					DrawToggle(current.megaSplat, ref changed.megaSplat, "MegaSplat");
 					DrawToggle(current.microSplat, ref changed.microSplat, "MicroSplat");
@@ -197,7 +195,6 @@ namespace MapMagic.GUI
 			settings.microSplat = symbols.Contains("__MICROSPLAT__");
 			settings.rtp = symbols.Contains("RTP");
 			settings.vsPro = symbols.Contains("VEGETATION_STUDIO_PRO");
-			settings.splinePackage = symbols.Contains("MM_SPLINEPACKAGE");
 
 			settings.autoRef = 
 				GetAutoRef("MapMagic") &&
@@ -223,7 +220,6 @@ namespace MapMagic.GUI
 			ToggleKeyword(settings.microSplat, "__MICROSPLAT__", ref symbols);
 			ToggleKeyword(settings.rtp, "RTP", ref symbols);
 			ToggleKeyword(settings.vsPro, "VEGETATION_STUDIO_PRO", ref symbols);
-			ToggleKeyword(settings.splinePackage, "MM_SPLINEPACKAGE", ref symbols);
 
 			SetAutoRef("MapMagic", settings.autoRef);
 			SetAutoRef("MapMagic.Editor", settings.autoRef);
@@ -299,7 +295,7 @@ namespace MapMagic.GUI
 			Texture2D icon = Resources.Load("MapMagic/Icons/Window") as Texture2D; 
 			window.titleContent = new GUIContent("MapMagic Settings", icon);
 
-			window.position = new Rect(100,100,300,370);
+			window.position = new Rect(100,100,300,340);
 		}
 
 		public static void ShowNet20Notification ()

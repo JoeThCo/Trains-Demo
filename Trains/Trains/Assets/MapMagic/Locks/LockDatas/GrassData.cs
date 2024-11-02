@@ -53,17 +53,7 @@ namespace MapMagic.Locks
 			UnifyPrototypes(ref applyGrassData.detailPrototypes, ref applyGrassData.detailLayers, ref lockPrototypes, ref lockLayers);
 
 			for (int c=0; c<lockPrototypes.Length; c++)
-			{
-				//filling null details (if generated terrain does not contain locked prototype)
-				if (applyGrassData.detailLayers[c] == null)
-					applyGrassData.detailLayers[c] = new int[resolution,resolution];
-
-				//filling null locks (if lock doesn't contain mapmagic prototype yet)
-				if (lockLayers[c] == null)
-					lockLayers[c] = new int[circle.rect.size.x, circle.rect.size.z];
-
 				Stamp(applyGrassData.detailLayers[c], lockLayers[c], circle.rect.offset, circle.center, circle.fullRadius);
-			}
 		}
 
 

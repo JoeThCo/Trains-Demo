@@ -33,7 +33,7 @@ namespace Den.Tools.GUI
 
 		#region Fast Fields
 
-			public static void Label (string label, GUIStyle style=null, string tooltip=null) //TODO: optimize style?
+			public static void Label (string label, GUIStyle style=null) //TODO: optimize style?
 			{
 				if (UI.current.layout) return;
 				if (UI.current.optimizeElements && !UI.current.IsInWindow()) return;
@@ -44,18 +44,7 @@ namespace Den.Tools.GUI
 				if (style==null) style = UI.current.styles.label;
 
 				if (Cell.current.disabled) UnityEditor.EditorGUI.BeginDisabledGroup(true); //BeginDisabledGroup performs some action on (false) anyways - do un-disable in disabled block
-				
-				if (tooltip != null)
-				{
-					if (tooltip == label)
-						tooltip = label + " "; //silly Unity doesn't show tooltip if it matches label
-
-					GUIContent gUIContent = new GUIContent(label, tooltip);
-					EditorGUI.LabelField(rect, gUIContent, style:style);
-				}
-				else
-					EditorGUI.LabelField(rect, label, style:style);
-				
+				EditorGUI.LabelField(rect, label, style:style);
 				if (Cell.current.disabled) UnityEditor.EditorGUI.EndDisabledGroup();
 			}
 
@@ -322,7 +311,7 @@ namespace Den.Tools.GUI
 			private static readonly Func<Rect,bool,bool> toggleFieldFn = (rect,val) => 
 			{
 				float maxSize = 16;
-				if (UI.current.scrollZoom!=null) maxSize *= UI.current.scrollZoom.zoom.x;
+				if (UI.current.scrollZoom!=null) maxSize *= UI.current.scrollZoom.zoom;
 				if (rect.width > maxSize) rect.width = maxSize;
 				if (rect.height > maxSize) rect.height = maxSize;
 				return EditorGUI.Toggle(rect, val, UI.current.styles.checkbox);
@@ -452,7 +441,7 @@ namespace Den.Tools.GUI
 				Rect shrinkedRect = new Rect(rect.x, rect.y+1, rect.width, rect.height-2);
 				UnityEngine.Object newVal = EditorGUI.ObjectField(shrinkedRect, val, objType:type, allowSceneObjects:allowSceneObject);
 
-				if (UI.current.styles.isPro)
+				if (StylesCache.isPro)
 					EditorGUI.DrawRect(rect, new Color(0.22f, 0.22f, 0.22f));
 
 				if (Event.current.type == EventType.Repaint)
@@ -465,8 +454,8 @@ namespace Den.Tools.GUI
 				Rect labelRect = new Rect(rect.x+2, rect.y, rect.width-22, rect.height);
 				EditorGUI.LabelField(labelRect, name, UI.current.styles.label);
 
-				Vector2 zoom = UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : Vector2.one;
-				Rect pickerRect = new Rect(rect.x+rect.width - 12*zoom.x, rect.y+rect.height/2-4*zoom.y, 8*zoom.x, 8*zoom.y);
+				float zoom = UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : 1;
+				Rect pickerRect = new Rect(rect.x+rect.width - 12*zoom, rect.y+rect.height/2-4*zoom, 8*zoom, 8*zoom);
 				UnityEngine.GUI.DrawTexture(pickerRect, StylesCache.objectPickerTex, ScaleMode.ScaleAndCrop);
 
 				if (Cell.current.disabled) UnityEditor.EditorGUI.EndDisabledGroup();
@@ -644,7 +633,7 @@ namespace Den.Tools.GUI
 				Rect shrinkedRect = new Rect(rect.x, rect.y+1, rect.width, rect.height-2);
 				UnityEngine.Object obj = EditorGUI.ObjectField(shrinkedRect, val, objType:type, allowSceneObjects:allowSceneObject);
 				
-				if (UI.current.styles.isPro)
+				if (StylesCache.isPro)
 					EditorGUI.DrawRect(rect, new Color(0.22f, 0.22f, 0.22f));
 
 				if (Event.current.type == EventType.Repaint)
@@ -657,7 +646,7 @@ namespace Den.Tools.GUI
 				Rect labelRect = new Rect(rect.x+2, rect.y, rect.width-22, rect.height);
 				EditorGUI.LabelField(labelRect, name, UI.current.styles.label);
 
-				float zoom = UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom.x : 1;
+				float zoom = UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : 1;
 				Rect pickerRect = new Rect(rect.x+rect.width - 12*zoom, rect.y+rect.height/2-4*zoom, 8*zoom, 8*zoom);
 				UnityEngine.GUI.DrawTexture(pickerRect, StylesCache.objectPickerTex, ScaleMode.ScaleAndCrop);
 
@@ -1151,7 +1140,7 @@ namespace Den.Tools.GUI
 
 		#region Class
 
-			public static bool Class (object obj, string category=null, Action<FieldInfo,Cell> additionalAction=null, bool drawAllPublic=false) 
+			public static bool Class (object obj, string category=null, Action<FieldInfo,Cell> additionalAction=null) 
 			/// Draws all values of the class marked with Val attribute (and category)
 			/// if additionalAction defined performs it for each fo the fields
 			/// Returns true if anything has been drawn, false if empty
@@ -1159,7 +1148,7 @@ namespace Den.Tools.GUI
 				Type type = obj.GetType();
 
 				ValAttribute[] attributes = null;
-				attributes = GetCachedVals(type, getAllPublic:drawAllPublic);
+				attributes = GetCachedVals(type);
 
 				for (int a=0; a<attributes.Length; a++)
 				{
@@ -1390,14 +1379,6 @@ namespace Den.Tools.GUI
 					Cell.EmptyLinePx(4);
 				}
 
-				else if (cachedEditors.TryGetValue((att.type,null), out Delegate editorAction)) 
-				//before class if there's a special editor
-				{
-					if (editorAction != null) 
-						using (Cell.LineStd) 
-							editorAction.DynamicInvoke(att.field.GetValue(obj));
-				}
-
 				else if (att.type.IsClass)// || type.IsValueType)
 				{
 					bool opened = true;
@@ -1457,7 +1438,7 @@ namespace Den.Tools.GUI
 				//cell.Dispose();
 			}
 
-			public static ValAttribute[] GetCachedVals (Type type, bool getAllPublic=false)
+			public static ValAttribute[] GetCachedVals (Type type)
 			{
 				if (valsCaches.TryGetValue(type, out ValAttribute[] attributes)) return attributes;
 
@@ -1467,10 +1448,6 @@ namespace Den.Tools.GUI
 				for (int f=0; f<fields.Length; f++)
 				{
 					ValAttribute valAtt = Attribute.GetCustomAttribute(fields[f], typeof(ValAttribute)) as ValAttribute;
-
-					if (valAtt==null && getAllPublic && fields[f].IsPublic)
-						valAtt = new ValAttribute(fields[f].Name);// {type=fields[f].FieldType};
-
 					if (valAtt == null) continue;
 					
 					valAtt.field = fields[f];
@@ -1606,7 +1583,7 @@ namespace Den.Tools.GUI
 				cachedEditors = new Dictionary<(Type,string),Delegate>();
 				Dictionary<EditorAttribute,MethodInfo> methodsDict = GetAllMethodsWithAttribute<EditorAttribute>();
 
-				foreach (var kvp in methodsDict) 
+				foreach (var kvp in methodsDict)
 				{
 					EditorAttribute editorAtt = kvp.Key;
 					MethodInfo methodInfo = kvp.Value;
@@ -1647,10 +1624,7 @@ namespace Den.Tools.GUI
 				{
 					bool isDependent = false;
 					foreach (AssemblyName dan in a.GetReferencedAssemblies())
-						if (dan.FullName == aName) 
-							{ isDependent = true; break; }
-					if (a.FullName==aName) 
-						isDependent = true; //otherwise it will skip all editors in GUI
+						if (dan.FullName == aName) { isDependent = true; break; }
 					#if UNITY_2019_2_OR_NEWER //don't know if it will affect anything, but doint it just not to ruin everything
 					if (!isDependent) continue;
 					#else
@@ -1746,7 +1720,7 @@ namespace Den.Tools.GUI
 			}
 
 
-			public static bool CheckButton (bool val, bool visible = true, GUIStyle style = null) 
+			public static bool CheckButton (bool val, bool visible = true) 
 			{
 				if (UI.current.layout) return val;
 				if (UI.current.optimizeElements && !UI.current.IsInWindow()) return val;
@@ -1755,11 +1729,8 @@ namespace Den.Tools.GUI
 
 				if (Cell.current.disabled) UnityEditor.EditorGUI.BeginDisabledGroup(true);
 
-				if (style == null)
-					style = UI.current.styles.button;
-
 				bool newVal;
-				if (visible) newVal = UnityEngine.GUI.Toggle(rect, val, "", style);
+				if (visible) newVal = UnityEngine.GUI.Toggle(rect, val, "", UI.current.styles.button);
 				else newVal = UnityEngine.GUI.Toggle(rect, val, "", GUIStyle.none);
 
 				if (Cell.current.disabled) UnityEditor.EditorGUI.EndDisabledGroup();
@@ -1773,19 +1744,19 @@ namespace Den.Tools.GUI
 			}
 
 
-			public static void CheckButton (ref bool val, bool visible = true, GUIStyle style = null) 
-				{ val = CheckButton(val, visible:visible, style:style); }
+			public static void CheckButton (ref bool val, bool visible = true) 
+				{ val = CheckButton(val, visible:visible); }
 
 
-			public static bool CheckButton (bool val, string label, bool visible=true, GUIStyle style = null) 
+			public static bool CheckButton (bool val, string label, bool visible=true) 
 			{
-				val = CheckButton(val, visible:visible, style:style);
+				val = CheckButton(val, visible:visible);
 				Label(label);
 				return val;
 			}
 
-			public static void CheckButton (ref bool val, string label, bool visible=true, GUIStyle style = null)
-				{ val = CheckButton(val, label, visible:visible, style:style); }
+			public static void CheckButton (ref bool val, string label, bool visible=true)
+				{ val = CheckButton(val, label, visible:visible); }
 
 
 			public static bool CheckButton (bool val, Texture2D iconOff, Texture2D iconOn, float iconScale=1, bool visible=true) 
@@ -1858,19 +1829,6 @@ namespace Den.Tools.GUI
 				style.Draw(scrRect, false, false, false ,false);
 			}
 
-			public static void Element (GUIStyle style, RectOffset constantPadding)
-			/// Useful for drawing backgrounds that have shadow elements of constant non-scaled-with-zoom size
-			{
-				if (UI.current.layout) return;
-				//if (UI.current.optimizeElements && !UI.current.IsInWindow()) return;
-				if (Event.current.type != EventType.Repaint) return;
-				
-				Rect rect = Cell.current.GetRect(UI.current.scrollZoom);
-				Rect paddingRect = new Rect(rect.x-constantPadding.left, rect.y-constantPadding.top, rect.width+constantPadding.horizontal, rect.height+constantPadding.vertical);
-
-				style.Draw(paddingRect, false, false, false ,false);
-			}
-
 
 			public static void Icon (Texture icon, Vector2 center, Color color = new Color(), float scale=1)
 			/// Draws an icon in the given coord in native resolution (for zoom 1). Independent from cell
@@ -1878,7 +1836,7 @@ namespace Den.Tools.GUI
 				if (UI.current.layout) return;
 				if (icon == null) return; //happens when performing a build
 				
-				float zoom = UI.current.scrollZoom != null  ?  UI.current.scrollZoom.zoom.x  :  1;
+				float zoom = UI.current.scrollZoom != null  ?  UI.current.scrollZoom.zoom  :  1;
 
 				Rect rect = new Rect(center.x - icon.width/2f*scale, center.y - icon.height/2f*scale, icon.width*scale, icon.height*scale);
 				if (UI.current.scrollZoom != null) 
@@ -1957,7 +1915,7 @@ namespace Den.Tools.GUI
 				//float scrollYfactor = textureAspect / rectAspect;
 
 				if (textureScrollZoomMat == null) textureScrollZoomMat = new Material( Shader.Find("Hidden/DPLayout/TextureScrollZoom") );
-				textureScrollZoomMat.SetFloat("_Scale", scrollZoom.zoom.x);
+				textureScrollZoomMat.SetFloat("_Scale", scrollZoom.zoom);
 				textureScrollZoomMat.SetFloat("_OffsetX", scrollZoom.scroll.x / rect.size.x);
 				textureScrollZoomMat.SetFloat("_OffsetY",  (1-scrollZoom.scroll.y) / rect.size.y + 1);
 				textureScrollZoomMat.SetTexture("_DispTex", texture);
@@ -2220,11 +2178,11 @@ namespace Den.Tools.GUI
 				selectedItem = PopupSelector(selectedItem, allItems, displayedOptions, label);
 
 
-			public static void TypeSelector<T> (ref T obj, string label, ref Type[] allTypes, ref string[] allNames, bool allAssemblies=false, Predicate<Type> filter=null)
+			public static void TypeSelector<T> (ref T obj, string label, ref Type[] allTypes, ref string[] allNames, bool allAssemblies=false)
 			{
 				if (allTypes == null)
 				{
-					allTypes = typeof(T).Subtypes(allAssemblies:allAssemblies, filter:filter);
+					allTypes = typeof(T).Subtypes(allAssemblies:allAssemblies);
 
 					allNames = new string[allTypes.Length];
 					for (int i=0; i<allNames.Length; i++)
@@ -2271,13 +2229,13 @@ namespace Den.Tools.GUI
 				float width = style.CalcSize( new GUIContent(label) ).x;
 				rect.x += rect.width - width;
 				rect.width = width;
-				rect.x -= rightOffset * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom.x : 0);
+				rect.x -= rightOffset * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : 0);
 
 				Rect backRect = rect;
-				backRect.yMin += 2 * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom.y : 0);
-				backRect.yMax -= 2 * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom.y : 0);
-				backRect.x -= 1 * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom.x : 0);
-				backRect.width += 3 * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom.x : 0);
+				backRect.yMin += 2 * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : 0);
+				backRect.yMax -= 2 * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : 0);
+				backRect.x -= 1 * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : 0);
+				backRect.width += 3 * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : 0);
 				
 				if (backStyle != null) 
 				{
@@ -2352,37 +2310,6 @@ namespace Den.Tools.GUI
 
 			public static void EditableLabelRight (ref string label, GUIStyle style=null)
 				{ label = EditableLabelRight(label, style); }
-
-
-			public static string EditableLabelText (string label, GUIStyle style=null)
-			/// Same editable label, but placed to the right of pencil icon
-			{
-				if (UI.current.optimizeCells && !UI.current.IsInWindow())
-					{ Cell.current.Skip(); return label; }
-				
-				Cell editLabelCell = Cell.Parent;
-
-				//using (Cell.LineStd)
-				{
-					if (style == null) style = UI.current.styles.middleLabel;
-
-					if (activeEditLabelCell != editLabelCell)  //non-editable
-						Label(label, style);  
-					else 
-						label = LabelEditField(label, style);
-				}
-
-				return label;
-			}
-
-			public static void EditableLabelButton (Texture2D icon, Cell labelCellParent=null, float iconScale=1)
-			{
-				if (labelCellParent == null)
-					labelCellParent = Cell.Parent;
-
-				if (Button(icon, visible:false, cursor:UnityEditor.MouseCursor.Link, iconScale:iconScale))
-					activeEditLabelCell = labelCellParent;
-			}
 
 
 			public static void SearchLabel (ref string label, GUIStyle style=null, bool forceFocus=false)
@@ -2533,7 +2460,7 @@ namespace Den.Tools.GUI
 
 				if (fadeWithZoom)
 				{	
-					float clampZoom = UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom.x : 1;
+					float clampZoom = UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom : 1;
 					if (clampZoom > 1) clampZoom = 1;
 					color = color*clampZoom  +  background*(1-clampZoom);
 				}
@@ -2556,18 +2483,6 @@ namespace Den.Tools.GUI
 				UnityEditor.EditorGUI.DrawPreviewTexture(displayRect, StylesCache.blankTex, gridMat, ScaleMode.StretchToFill);
 			}
 
-			public static void Background (Rect displayRect, Color color)
-			{
-				if (UI.current.layout) return;
-				UnityEditor.EditorGUI.DrawRect(displayRect, color);
-			}
-
-
-			public static void Line (int pos, bool isVertical, Color color)
-			{
-				Rect displayRect = new Rect(0, 0, Screen.width, Screen.height);
-				StaticAxis(displayRect, pos, isVertical, color);
-			}
 
 			public static void StaticAxis (Rect displayRect, int pos, bool isVertical, Color color)
 			/// Infinite horizontal or vertical line
@@ -2579,13 +2494,13 @@ namespace Den.Tools.GUI
 				
 				Rect lineRect = isVertical ?
 					new Rect (
-						pos*UI.current.scrollZoom.zoom.x + UI.current.scrollZoom.scroll.x,
+						pos*UI.current.scrollZoom.zoom + UI.current.scrollZoom.scroll.x,
 						displayRect.y,
 						1,
 						displayRect.height) :
 					new Rect (
 						displayRect.x,
-						pos*UI.current.scrollZoom.zoom.y + UI.current.scrollZoom.scroll.y,
+						pos*UI.current.scrollZoom.zoom + UI.current.scrollZoom.scroll.y,
 						displayRect.width,
 						1);
 
@@ -2828,7 +2743,7 @@ namespace Den.Tools.GUI
 				
 				Rect rect = Cell.current.GetRect(UI.current.scrollZoom);
 
-				EditorGUI.DrawRect(rect, UI.current.styles.isPro ? Color.black : new Color(0.57f, 0.57f, 0.57f, 1));
+				EditorGUI.DrawRect(rect, StylesCache.isPro ? Color.black : new Color(0.57f, 0.57f, 0.57f, 1));
 			}
 
 
@@ -2840,12 +2755,12 @@ namespace Den.Tools.GUI
 				DebugRect(new Rect(Cell.current.worldPosition, Cell.current.finalSize), level);
 			}
 
-			public static void DebugRect (Rect rect, int level=0, bool screenSpace=false)
+			public static void DebugRect (Rect rect, int level=0)
 			{
 				if (UI.current.layout) return;
 				if (UI.current.optimizeElements && !UI.current.IsInWindow()) return;
 				
-				if (!screenSpace && UI.current.scrollZoom != null)
+				if (UI.current.scrollZoom != null)
 					rect = UI.current.scrollZoom.ToScreen(rect.position, rect.size); 
 
 				Color color = new Color(level/3f, 1-level/5f, 0, 0.5f);
@@ -2966,18 +2881,15 @@ namespace Den.Tools.GUI
 
 		#region Foldout
 
-			public static void Foldout (ref bool src, string label, GUIStyle style=null)
+			public static void Foldout (ref bool src, string label)
 			{
 				if (UI.current.optimizeCells && !UI.current.IsInWindow())
 					{ Cell.current.Skip(); return; }
 
 				src = Draw.CheckButton(src, visible:false);
 
-				if (style == null)
-					style = UI.current.styles.boldLabel;
-
 				using (Cell.Row)
-					Draw.Label(label, style);
+					Draw.Label(label, UI.current.styles.boldLabel);
 
 				using (Cell.RowPx(15))
 					src = CheckButton(src, 
@@ -2987,7 +2899,7 @@ namespace Den.Tools.GUI
 			}
 
 
-			public static void FoldoutLeft (ref bool src, string label, GUIStyle style=null)
+			public static void FoldoutLeft (ref bool src, string label)
 			{
 				if (UI.current.optimizeCells && !UI.current.IsInWindow())
 					{ Cell.current.Skip(); return; }
@@ -3000,11 +2912,8 @@ namespace Den.Tools.GUI
 						UI.current.textures.GetTexture("DPUI/Chevrons/SmallRight"),
 						visible:false);
 
-				if (style == null)
-					style = UI.current.styles.boldLabel;
-
 				using (Cell.Row)
-					Draw.Label(label, style);
+					Draw.Label(label, UI.current.styles.boldLabel);
 			}
 
 
@@ -3082,7 +2991,7 @@ namespace Den.Tools.GUI
 					if (!enabled)
 						{innerCell=null; backupScrollZoom = UI.current.scrollZoom; backupMousePos = UI.current.mousePos; return; }
 
-					float guizoom = UI.current.scrollZoom != null ? UI.current.scrollZoom.zoom.x : 1;
+					float guizoom = UI.current.scrollZoom != null ? UI.current.scrollZoom.zoom : 1;
 					Vector2 guiscroll = UI.current.scrollZoom != null ? UI.current.scrollZoom.scroll : Vector2.zero;
 
 					Rect cellRect = Cell.current.GetRect(UI.current.scrollZoom, padding:fieldPadding);

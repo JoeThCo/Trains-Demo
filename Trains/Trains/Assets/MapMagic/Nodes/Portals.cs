@@ -25,8 +25,8 @@ namespace MapMagic.Nodes
 
 	public interface IPortalExit<out T> :  IOutlet<T> where T:class
 	{
+		IPortalEnter<T> Enter { get; }
 		void AssignEnter (IPortalEnter<object> enter, Graph graph);
-		IPortalEnter<T> RefreshEnter (Graph graph); //gets enter at the same time
 	}
 
 
@@ -48,74 +48,41 @@ namespace MapMagic.Nodes
 	}
 
 
-	
-
 	[Serializable]
 	[GeneratorMenu (name ="Generic Portal Exit")]
-	public class PortalExit<T> : Generator, IOutlet<T>, IPortalExit<T>, ICustomDependence, ICustomSerialize  where T: class, ICloneable 
+	public class PortalExit<T> : Generator, IOutlet<T>, IPortalExit<T>, ICustomClear, ICustomDependence   where T: class, ICloneable 
 	{
-		public PortalEnter<T> enter; //older versions used to save enter as class. TODO 3.0 rename tempEnter to enter
-		[NonSerialized] public PortalEnter<T> tempEnter;
-		//public IPortalEnter<T> Enter => enter;
-
-		public ulong enterId = 0; 
-
-
-		public void OnBeforeSerialize (Graph graph) => enterId = tempEnter.Id;
-		public void OnAfterDeserialize (Graph graph) => RefreshEnter(graph);
-
-
-		public IPortalEnter<T> RefreshEnter (Graph graph)
-		{
-			//switching old portal to new format
-			if (enter != null)
-			{
-				tempEnter = enter;
-				enterId = enter.id;
-				enter = null;
-			}
-
-			//refreshing enter
-			if (tempEnter == null  ||  tempEnter.id != enterId)
-			{
-				Generator gen = graph.GetGeneratorById(enterId);
-				if (gen != null)
-					tempEnter = (PortalEnter<T>)gen;
-			}
-
-			return tempEnter;
-		}
+		public PortalEnter<T> enter; //TODO: don't serialize, keep name only for serialization simplicity
+		public IPortalEnter<T> Enter => enter;
 
 		public void AssignEnter (IPortalEnter<object> ienter, Graph graph)
 		{
-			//removing enter
-			if (ienter == null)
-			{
-				tempEnter = null;
-				enterId = 0;
-				return;
-			}
-
 			if (!(ienter is PortalEnter<T> enter)) return;
 			//TODO: other validity check
-
-			tempEnter = enter;
-			enterId = enter.id;
+			this.enter = enter;
 		}
 
 		public override void Generate (TileData data, StopToken stop) 
 		{ 
-			if (tempEnter != null   &&  !stop.stop) 
+			if (enter != null   &&  !stop.stop) 
 			{
-				data.StoreProduct(this, data.ReadInletProduct(tempEnter));
+				data.StoreProduct(this, data.ReadInletProduct(enter));
 				//TODO: clone?
 			}
 		}
 
+		public void ClearAny (Generator gen, TileData data) { } //Called at top level graph each time any node changes
+		public void ClearDirectly (TileData data) { }  //Called by graph if gen field was changed
+		public void ClearRecursive (TileData data)  //Called by graph on clearing recursive (no matter ready or not). Inlets are already cleared to this moment
+		{
+			if (!data.IsReady(enter))
+				data.ClearReady(this);
+		}
+
 		public IEnumerable<Generator> PriorGens () 
 		{
-			if (tempEnter != null)
-				yield return tempEnter;
+			if (enter != null)
+				yield return enter;
 		}
 	}
 }

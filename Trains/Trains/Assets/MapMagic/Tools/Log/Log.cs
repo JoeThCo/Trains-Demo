@@ -12,8 +12,7 @@ namespace Den.Tools
 		public class Entry : IDisposable
 		{
 			public string name;
-			public string id;
-			public string idName; //id should be unique, while name shouldn't. Like id=thread, idName=coord for tile
+			public string threadName;
 			public long startTicks;
 			public long disposeTicks;
 			public (string,string)[] fieldValues;
@@ -45,8 +44,7 @@ namespace Den.Tools
 			}
 		}
 
-		public static bool enabled = false; 
-		private static long unityStartTime = 0;
+		public static bool enabled = false;
 
 		public static Entry root = new Entry() {name="Root"};
 		private static Entry activeGroup = root; //not among openedGroups  //TODO: make a dictionary thread->group
@@ -57,66 +55,28 @@ namespace Den.Tools
 		public const string defaultId = "Default";
 
 		
-		public static void AddThreaded (string name) => 
-			Add(name, Thread.CurrentThread.ManagedThreadId.ToString(), null, null, null);
+		public static void AddThreadId (string name) => Add(name, Thread.CurrentThread.ManagedThreadId.ToString());
 
-		public static void AddThreaded (string name, params (string,object)[] additional) => 
-			Add(name, Thread.CurrentThread.ManagedThreadId.ToString(), null, null, additional);
-
-		public static void AddThreaded (string name, string idName, params (string,object)[] additional) => 
-			Add(name, Thread.CurrentThread.ManagedThreadId.ToString(), idName, null, additional);
-
-		public static void Add (string name, string id, object obj) =>
-			Add(name, id, null, obj, null);
-
-		public static void Add (string name, params (string,object)[] additional) =>
-			Add(name, null, null, additional);
-
-		public static void Add (string name) =>
-			Add(name, null, null, null);
-
-		public static void Add (string name, string id, string idName, object obj, params (string,object)[] additional)
+		public static void Add (string name, string id=defaultId)
 		{
 			if (!enabled) return;
 
-			if (id == null)
-				id = defaultId;
-
-			Entry entry = new Entry() {name=name, id=id};
-
-			if (unityStartTime == 0)
-				unityStartTime = System.Diagnostics.Process.GetCurrentProcess().StartTime.Ticks;
-			long currentTime = DateTime.Now.Ticks; //todo: minimize operations after DateTime.Now
-			entry.startTicks = currentTime - unityStartTime;
-
-			entry.idName = idName;
-
-			if (obj != null)
-				entry.fieldValues = ReadValues(obj);
-
-			if (additional != null)
-			{
-				(string,string)[] sVals = new (string, string)[additional.Length];
-				for (int i=0; i<sVals.Length; i++)
-				{
-					sVals[i] = (additional[i].Item1, null);
-					object item2 = additional[i].Item2;
-					if (item2 is string sItem2)
-						sVals[i].Item2 = sItem2;
-					else
-						sVals[i].Item2 = item2.ToString();
-				}
-				if (entry.fieldValues==null || entry.fieldValues.Length==0) 
-					entry.fieldValues = sVals;
-				else
-					entry.fieldValues = ArrayTools.Append(entry.fieldValues, sVals);
-			}
+			Entry entry = new Entry() {name=name, threadName=id};
 			
-			lock (root)
-			{
-				if (activeGroup.subs == null) activeGroup.subs = new List<Entry>();
-				activeGroup.subs.Add(entry);
-			}
+			if (activeGroup.subs == null) activeGroup.subs = new List<Entry>();
+			activeGroup.subs.Add(entry);
+		}
+
+		public static void Add (string name, string id, object obj)
+		{
+			if (!enabled) return;
+
+			Entry entry = new Entry() {name=name, threadName=id};
+			entry.fieldValues = ReadValues(obj);
+
+			if (activeGroup.subs == null) activeGroup.subs = new List<Entry>();
+			activeGroup.subs.Add(entry);
+				
 		}
 
 
@@ -124,7 +84,7 @@ namespace Den.Tools
 		{
 			if (!enabled) return tempGroup;
 
-			Entry entry = new Entry() {name=name, id=id};
+			Entry entry = new Entry() {name=name, threadName=id};
 
 			if (activeGroup.subs == null) activeGroup.subs = new List<Entry>();
 			activeGroup.subs.Add(entry);
@@ -132,8 +92,7 @@ namespace Den.Tools
 			openedGroups.Add(activeGroup);
 			activeGroup = entry;
 
-			if (unityStartTime == 0)
-				unityStartTime = System.Diagnostics.Process.GetCurrentProcess().StartTime.Ticks;
+			long unityStartTime = System.Diagnostics.Process.GetCurrentProcess().StartTime.Ticks;
 			long currentTime = DateTime.Now.Ticks; //todo: minimize operations after DateTime.Now
 			entry.startTicks = currentTime - unityStartTime;
 
@@ -189,28 +148,9 @@ namespace Den.Tools
 			HashSet<string> usedIds = new HashSet<string>();
 
 			foreach (Entry sub in AllEntries())
-				usedIds.Add(sub.id);
+				usedIds.Add(sub.threadName);
 
 			return usedIds;
-		}
-
-		public static Dictionary<string,int> UsedThreadsNums ()
-		///Same as UsedThreads, but also returns number of last entry for this thread
-		{
-			Dictionary<string,int> usedIdsNums = new Dictionary<string,int>();
-
-			int i=0;
-			foreach (Entry sub in AllEntries())
-			{
-				if (!usedIdsNums.ContainsKey(sub.id))
-					usedIdsNums.Add(sub.id, i);
-				else
-					usedIdsNums[sub.id] = i;
-
-				i++;
-			}
-
-			return usedIdsNums;
 		}
 	}
 }

@@ -88,11 +88,7 @@ namespace MapMagic.Previews
 				
 				for (int l=0; l<points.Length; l++)
 					for (int p=0; p<points[l].Length; p++)
-					{
-						Vector3 pos = points[l][p];
-						pos -= worldPos;
-						points[l][p] = new Vector3(pos.x/worldSize.x, pos.y/worldHeight, pos.z/worldSize.z);
-					}
+						points[l][p] = new Vector3(points[l][p].x/worldSize.x, points[l][p].y/worldHeight, points[l][p].z/worldSize.z);
 
 				if (polyLine == null) polyLine = new PolyLine(0);
 				polyLine.SetPointsThread(points); 
@@ -138,7 +134,6 @@ namespace MapMagic.Previews
 					for (int n=0; n<splineSys.lines[l].NodesCount; n++)
 					{
 						Vector3 pos = splineSys.lines[l].GetNodePos(n);
-						pos -= worldPos;
 						pos = new Vector3(pos.x/worldSize.x, pos.y/worldHeight, pos.z/worldSize.z);
 
 						for (int v=0; v<4; v++)
@@ -397,7 +392,7 @@ namespace MapMagic.Previews
 					lineMat.SetTexture("_MainTex", lineTex);
 					lineMat.SetColor("_Color", guiGizmoColor);
 					lineMat.SetFloat("_Width", 1.5f);
-					//lineMat.SetFloat("_Offset", worldPos);
+					//lineMat.SetFloat("_Offset", offset);
 					//lineMat.SetFloat("_NumPoints", numPoints-1);
 					//lineMat.SetFloat("_Dotted", dottedSpace);
 				}

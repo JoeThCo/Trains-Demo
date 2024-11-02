@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using Den.Tools;
 using Den.Tools.GUI;
 using Den.Tools.Matrices;
-using Den.Tools.Matrices.Window;
 
 using MapMagic.Nodes;
 using MapMagic.Terrains;
@@ -49,11 +48,6 @@ namespace MapMagic.Core.GUI
 				Cell.EmptyRowPx(4);
 				//using (Cell.RowPx(64)) Draw.TextureIcon(texture); 
 				using (Cell.Row) Draw.Label(name);
-
-				using (Cell.RowPx(60))
-					if (Draw.Button("Open"))
-						MatrixWindow.GetCreateWindow(map, name);
-
 				Cell.EmptyRowPx(4);
 			}
 

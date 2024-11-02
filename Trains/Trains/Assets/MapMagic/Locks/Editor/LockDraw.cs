@@ -190,7 +190,7 @@ namespace MapMagic.Locks
 						using (Cell.LineStd) 
 						{
 							Cell.current.disabled = !isContainedInAny;
-							Draw.ToggleLeft(ref lk.relativeHeight, "Relative Height");
+							Draw.ToggleLeft(ref lk.relativeHeight, "Relative Height (beta)");
 						}
 
 						if (!isContainedInAny)
@@ -204,15 +204,9 @@ namespace MapMagic.Locks
 
 						using (Cell.LinePx(22))
 						{
-							//Draw.CheckButton(ref locked);
-							//if (Cell.current.valChanged)
-							//	lk.locked = locked;
-
-							if (Draw.Button())
-							{
-								locked = !locked;
+							Draw.CheckButton(ref locked, "");
+							if (Cell.current.valChanged)
 								lk.locked = locked;
-							}
 
 							Cell.EmptyRowRel(1);
 							using (Cell.RowPx(14)) Draw.Icon(icon);

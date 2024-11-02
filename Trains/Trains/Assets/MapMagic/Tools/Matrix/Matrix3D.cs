@@ -50,26 +50,6 @@ namespace Den.Tools
 		public static bool operator < (CoordDir a, CoordDir b) { return (a.x<b.x || a.z<b.z); }
 		public static bool operator <= (CoordDir a, CoordDir b) { return (a.x<=b.x || a.z<=b.z); }
 
-		public int this[int i] 
-		{
-			get{
-				switch (i)
-				{
-					default: case 0: return x;
-					case 1: return y;
-					case 2: return z;
-				}
-			}
-			set{
-				switch (i)
-				{
-					default: case 0: x=value; break;
-					case 1: y=value; break;
-					case 2: z=value; break;
-				}
-			}
-		}
-
 
 		public static CoordDir Min (CoordDir[] coords)
 		{
@@ -109,7 +89,6 @@ namespace Den.Tools
 		public int BlockMagnitude3 { get { return Mathf.Abs(x)+Mathf.Abs(y)+Mathf.Abs(z); } }
 
 		public override string ToString() { return "x:"+x+" y:"+y+" z:"+z+" dir:"+dir; }
-		public string ToString(bool writeDir) { return ""+x+","+y+","+z+(writeDir?" dir:"+dir:""); }
 
 		public Vector3 vector3 { get { return new Vector3(x,y,z); }}
 		public Vector3 vector3centered { get { return new Vector3(x+0.5f,y+0.5f,z+0.5f); }}
@@ -241,17 +220,6 @@ namespace Den.Tools
 			#endif
 					
 			return (c.z-offset.z)*size.x*size.y + (c.y-offset.y)*size.x + c.x - offset.x;
-		}
-
-		public CoordDir GetCoord (int e)
-		{	
-			return new CoordDir (
-			//	(e % (size.x*size.y)) % size.x + offset.x,
-			//	(e / (size.x*size.y)) % size.y + offset.y,
-			//	e / (size.x*size.y*size.z) + offset.z );
-				e % size.x + offset.x,
-				(e / size.x) % size.y + offset.y,
-				e / (size.x*size.y) + offset.z );
 		}
 
 		public void Encapsulate (CoordDir coord)

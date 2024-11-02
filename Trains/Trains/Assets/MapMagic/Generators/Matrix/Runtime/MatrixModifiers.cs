@@ -18,8 +18,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Curve")]
 	public class Curve200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld> 
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public Curve curve = new Curve( new Vector2(0,0), new Vector2(1,1) );   
 
 		[NonSerialized] public float[] histogram = null;
@@ -100,7 +98,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Levels")]
 	public class Levels200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld> 
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
 		//public Vector2 min = new Vector2(0,0);
 		//public Vector2 max = new Vector2(1,1);
 		public float inMin = 0;
@@ -144,7 +141,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Contrast")]
 	public class Contrast200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld> 
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
 		[Val(name="Intensity")] public float brightness = 0f;
 		[Val(name="Contrast")] public float contrast = 1f;
 
@@ -178,7 +174,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/UnityCurve")]
 	public class UnityCurve200 : Generator, IMultiInlet, IOutlet<MatrixWorld> 
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
 		[Val("Inlet", "Inlet")] public readonly IInlet<MatrixWorld> srcIn = new Inlet<MatrixWorld>();
 		[Val("Mask", "Inlet")]	public readonly IInlet<MatrixWorld> maskIn = new Inlet<MatrixWorld>();
 		public IEnumerable<IInlet<object>> Inlets() { yield return srcIn; yield return maskIn; }
@@ -218,7 +213,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/MapMask")]
 	public class Mask200 : Generator, IMultiInlet, IOutlet<MatrixWorld> 
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
 		[Val("Input A", "Inlet")]	public readonly Inlet<MatrixWorld> aIn = new Inlet<MatrixWorld>();
 		[Val("Input B", "Inlet")]	public readonly Inlet<MatrixWorld> bIn = new Inlet<MatrixWorld>();
 		[Val("Mask", "Inlet")]	public readonly Inlet<MatrixWorld> maskIn = new Inlet<MatrixWorld>();
@@ -253,8 +247,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Blend")]
 	public class Blend200 : Generator, IMultiInlet, IOutlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public class Layer
 		{
 			public readonly Inlet<MatrixWorld> inlet = new Inlet<MatrixWorld>();
@@ -342,8 +334,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Normalize")]
 	public class Normalize200 : Generator, IMultiInlet, IMultiOutlet
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public class NormalizeLayer : IInlet<MatrixWorld>, IOutlet<MatrixWorld>
 		{
 			public float Opacity { get; set; }
@@ -417,7 +407,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Blur")]
 	public class Blur200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
 		[Val("Downsample")] public float downsample = 10f;
 		[Val("Blur")] public float blur = 3f;
 
@@ -447,7 +436,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Cavity")]
 	public class Cavity200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
 		public enum CavityType { Convex=0, Concave=1, Both=2 }
 		[Val("Type")]		public CavityType type = CavityType.Convex;
 		[Val("Intensity")]	public float intensity = 3;
@@ -514,7 +502,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Slope")]
 	public class Slope200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
 		[Val("From")]			public float from = 30;
 		[Val("To")]				public float to = 90;
 		[Val("Smooth Range")]	public float range = 30f;
@@ -578,8 +565,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Selector")]
 	public class Selector200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public enum RangeDet { Transition, MinMax}
 		public RangeDet rangeDet = RangeDet.Transition;
 		public enum Units { Map, World }
@@ -623,8 +608,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Terrace")]
 	public class Terrace200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		[Val("Seed")]		 public int seed = 12345;
 		[Val("Num")]		 public int num = 10;
 		[Val("Uniformity")] public float uniformity = 0.5f;
@@ -679,8 +662,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Direction")]
 	public class Direction210 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		[Val("Hor Angle", min=-360, max=360)] public float horAngle = 0;
 		[Val("Vert Angle", min=-89.99f, max=89.99f)] public float vertAngle = 0;
 		[Val("Intensity", min =0)] public float intensity = 1;
@@ -716,8 +697,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Ledge")]
 	public class Ledge210 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>, IMultiInlet
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		[Val("Level")]		public float level = 50;
 		[Val("Contour Blur")]	public float contourBlur = 3;
 		[Val("Height")]		public float height = 10;
@@ -892,8 +871,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Beach")]
 	public class Beach210 : Generator, IInlet<MatrixWorld>, IMultiInlet, IOutlet<MatrixWorld>, IMultiOutlet
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		[Val("Level")]	public float level = 50;
 		[Val("Contour Relax")]	public float relax = 100;
 		[Val("Size")]	public float size = 40;
@@ -1058,8 +1035,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Erision")]
 	public class Erosion200 : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>, ICustomComplexity
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		[Val("Iterations")]		 public int iterations = 3;
 		[Val("Durability")] public float terrainDurability=0.9f;
 		//[Val("Erosion")]	 
@@ -1091,7 +1066,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 		public override void Generate (TileData data, StopToken stop)
 		{
 			#if MM_DEBUG
-			Log.AddThreaded("Generating Erosion (draft:" + data.isDraft + " pos:" + data.area.active.worldPos);
+			Log.Add("Generating Erosion (draft:" + data.isDraft + " pos:" + data.area.active.worldPos);
 			#endif
 
 			MatrixWorld src = data.ReadInletProduct(this);
@@ -1158,8 +1133,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Sediment")]
 	public class Sediment210 : Generator, IMultiInlet, IMultiOutlet
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		[Val("Original", "Outlet")] public readonly Inlet<MatrixWorld> origIn = new Inlet<MatrixWorld>();
 		[Val("Eroded", "Outlet")] public readonly Inlet<MatrixWorld> erodedIn = new Inlet<MatrixWorld>();
 		public IEnumerable<IInlet<object>> Inlets()  { yield return origIn; yield return erodedIn; }
@@ -1232,8 +1205,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Parallax")]
 	public class Parallax210 : Generator, IInlet<MatrixWorld>, IMultiInlet, IOutlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		[Val("Intensity X", "Inlet")]	public readonly Inlet<MatrixWorld> intensityInX = new Inlet<MatrixWorld>();
 		[Val("Intensity Z", "Inlet")]	public readonly Inlet<MatrixWorld> intensityInZ = new Inlet<MatrixWorld>();
 		public virtual IEnumerable<IInlet<object>> Inlets () { yield return intensityInX; yield return intensityInZ; }

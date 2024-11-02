@@ -127,52 +127,13 @@ namespace MapMagic.Nodes.GUI
 				item.onClick = ()=> 
 				{
 					graph.UnlinkGenerator(gen);
+					GraphWindow.current?.RefreshMapMagic(gen);
 					//undo
 				};
 				item.closeOnClick = true;
 				genItems.subItems.Add(item);
 			}
 			
-			if (gen!=null) 
-			{ //help
-				Item item = new Item($"Help", onDraw:RightClick.DrawItem, priority:7);
-				item.color = RightClick.defaultColor;
-				item.onClick = ()=> 
-				{	
-					GeneratorMenuAttribute att = GeneratorDraw.GetMenuAttribute(gen.GetType());
-					if (att.helpLink != null)
-						Application.OpenURL(att.helpLink);
-				};
-				item.closeOnClick = true;
-				genItems.subItems.Add(item);
-			}
-
-			if (gen!=null) 
-			{ //code
-				Item item = new Item($"GoTo Code", onDraw:RightClick.DrawItem, priority:8);
-				item.color = RightClick.defaultColor;
-				item.onClick = ()=> 
-				{	
-					(string path, int line) = gen.GetCodeFileLine();
-
-					bool found = false;
-					if (path != null  &&  !path.Contains("Generator.cs"))
-					{
-						string file = System.IO.Path.GetFileNameWithoutExtension(path);
-						string[] assets = AssetDatabase.FindAssets(file);
-						if (assets.Length != 0)
-						{
-							AssetDatabase.OpenAsset(AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(assets[0]), typeof(UnityEngine.Object)), line);
-							found = true;
-						}
-					}
-					
-					if (!found)
-						EditorUtility.DisplayDialog("Error", "Could not find generator file: " + path, "OK");
-				};
-				item.closeOnClick = true;
-				genItems.subItems.Add(item);
-			}
 
 			if (gen!=null) 
 			{ //id

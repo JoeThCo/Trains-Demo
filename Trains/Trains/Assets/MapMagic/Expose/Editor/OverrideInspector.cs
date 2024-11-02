@@ -109,9 +109,10 @@ namespace MapMagic.Expose.GUI
 			
 			foreach (IUnit unit in mmGraph.exposed.UnitsByReference(mmGraph, reference))
 				if (unit is Generator gen)
-					gen.version++;
+					mm.Clear(gen);
 
-			GraphWindow.current?.RefreshMapMagic(); 
+			GraphWindow.current?.RefreshMapMagic(null); 
+				//will clear no generator - needed genscleared before
 		}
 	}
 

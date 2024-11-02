@@ -53,8 +53,7 @@ namespace MapMagic.Nodes.GUI
 				catch (ExitGUIException)
 					{ } //ignoring
 				catch (Exception e) 
-					{ throw e; }
-                    //{ Debug.LogError($"Draw Generator {genType} failed: \n" + e); }
+					{ Debug.LogError($"Draw Generator {genType} failed: \n" + e); }
 			}
 		}
 
@@ -141,21 +140,13 @@ namespace MapMagic.Nodes.GUI
 					fieldDrawn = Draw.Editor(gen) || fieldDrawn;
 
 				if (Cell.current.valChanged)
-				{
-					gen.version ++;
-
-					#if MM_DEBUG
-					Log.Add("DrawGenerator ValueChanged", id:null, idName:null, ("gen ver:",gen.version), ("graph ver:", graph.IdsVersions()));
-					#endif
-
-					GraphWindow.current?.RefreshMapMagic();
-				}
+					GraphWindow.current?.RefreshMapMagic(gen);
 			}
 			
 
 			//debug
 			#if MM_DEBUG
-			//if (graph.debugGenInfo)
+			if (graph.debugGenInfo)
 			{
 				DrawDebug(gen);
 				fieldDrawn = true;
@@ -241,7 +232,7 @@ namespace MapMagic.Nodes.GUI
 			}
 
 			float dpiFactor = UI.current.DpiScaleFactor;
-			float zoom = UI.current.scrollZoom != null ? UI.current.scrollZoom.zoom.x : 1;
+			float zoom = UI.current.scrollZoom != null ? UI.current.scrollZoom.zoom : 1;
 
 			Vector2 roundVal = new Vector2(  //0.5002 prevents cells un-align for the reason I don't remember
 				moveTo.x > 0  ?  0.5002f  :  -0.5002f,
@@ -356,7 +347,7 @@ namespace MapMagic.Nodes.GUI
 
 		public static T[] DrawLayersAddRemove<T> (Generator gen, T[] layers, bool inversed=false, bool unlinkBackground=false) where T : class, new()
 		{
-			float backCol = UI.current.styles.isPro ? 0.25f : 0.66f; 
+			float backCol = StylesCache.isPro ? 0.25f : 0.66f; 
 			Draw.Rect( new Color(backCol, backCol, backCol) );
 
 			Cell layersCell = Cell.Parent;
@@ -367,12 +358,15 @@ namespace MapMagic.Nodes.GUI
 					onRemove: n => RemoveLayer<T>(gen, ref layers, inversed, n, unlinkBackground),
 					onMove: (f,t) => MoveLayer<T>(gen, ref layers, inversed, f, t, unlinkBackground) );
 
+			if (Cell.current.valChanged  &&  GraphWindow.current.mapMagic!=null)
+				GraphWindow.current?.RefreshMapMagic(gen);
+
 			return layers;
 		}
 
 		public static void DrawLayersThemselves<T> (Generator gen, T[] layers, bool inversed=false, Action<Generator,int> layerEditor=null) where T : class
 		{
-			float backCol = UI.current.styles.isPro ? 0.25f : 0.66f; 
+			float backCol = StylesCache.isPro ? 0.25f : 0.66f; 
 			Draw.Rect( new Color(backCol, backCol, backCol) );
 
 			Cell layersCell = Cell.Parent;
@@ -451,62 +445,44 @@ namespace MapMagic.Nodes.GUI
 		}
 
 
-		#if MM_DEBUG
 		private static void DrawDebug (Generator gen)
 		{
-			using (Cell.LinePx(0))
-				using (new Draw.FoldoutGroup(ref gen.guiDebug, "Debug"))
-					if (gen.guiDebug)
+			using (Cell.LineStd) Draw.Label("Id: " + Id.ToString(gen.id));
+			using (Cell.LineStd) Draw.Label(gen.id.ToString());
+
+
+			TileData previewData = null;
+			if (GraphWindow.current.mapMagic is MapMagicObject mapMagicObject) previewData = mapMagicObject?.PreviewData;
+
+			if (previewData != null)
+			{
+				Graph rootGraph = GraphWindow.current.mapMagic.Graph;
+
+				foreach ((Graph subGraph, TileData subData) in Graph.SubGraphsDatas(rootGraph,previewData))
+				{
+					if (!subGraph.ContainsGenerator(gen))
+						continue;
+
+					Cell.EmptyLinePx(5);
+					using (Cell.LineStd) Draw.Toggle(subData.IsReady(gen), "Ready");
+					if (gen is ICustomComplexity)
+						using (Cell.LineStd) Draw.DualLabel("Progress", subData.GetProgress((ICustomComplexity)gen).ToString());
+					if (gen is IOutlet<object> outlet)
 					{
-						using (Cell.LineStd) Draw.Label("Id: " + Id.ToString(gen.id));
-						//using (Cell.LineStd) Draw.Label(gen.id.ToString());
-
-						Cell.EmptyLinePx(5);
-						using (Cell.LineStd) Draw.DualLabel("Version GUI:", gen.version.ToString());
-
-						TileData lastData = null;
-						if (GraphWindow.current.mapMagic is MapMagicObject mapMagicObject) //trying to use preview data for consistency
-							lastData = mapMagicObject?.PreviewData;
-
-						if (lastData != null) 
+						object product = subData.ReadOutletProduct(outlet);
+						string hashString = "null";
+						if (product != null)
 						{
-							Graph rootGraph = GraphWindow.current.mapMagic.Graph;
-
-							foreach ((Graph subGraph, TileData subData) in Graph.AllGraphsDatas(rootGraph,lastData,includeSelf:true))
-							{
-								if (!subGraph.ContainsGenerator(gen))
-									continue;
-
-								ulong? dataVersion = subData.Version(gen);
-								using (Cell.LineStd) Draw.DualLabel("Version Data:", dataVersion!=null ? dataVersion.Value.ToString() : "N/A"); 
-								using (Cell.LineStd) Draw.Toggle(subData.IsReady(gen), "Ready");
-
-								Cell.EmptyLinePx(5);
-								if (gen is ICustomComplexity)
-									using (Cell.LineStd) Draw.DualLabel("Progress:", subData.GetProgress((ICustomComplexity)gen).ToString());
-								if (gen is IOutlet<object> outlet)
-								{
-									object product = subData.ReadOutletProduct(outlet);
-									string hashString = "null";
-									if (product != null)
-									{
-										int hashCode = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(product);
-										hashString = Convert.ToBase64String( BitConverter.GetBytes(hashCode) );
-									}
-									using (Cell.LineStd) Draw.DualLabel("Product:", hashString);
-								}
-							}
+							int hashCode = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(product);
+							hashString = Convert.ToBase64String( BitConverter.GetBytes(hashCode) );
 						}
-						else
-							using (Cell.LineStd) Draw.Label("No preview data");
-
-
-						using (Cell.LineStd) Draw.DualLabel("Time Draft:", gen.draftTime.ToString("0.00") + "ms");
-						using (Cell.LineStd) Draw.DualLabel("Time Main:", gen.mainTime.ToString("0.00") + "ms");
+						using (Cell.LineStd) Draw.DualLabel("Product", hashString);
 					}
+				}
+			}
+			using (Cell.LineStd) Draw.DualLabel("Time Draft", gen.draftTime.ToString("0.00") + "ms");
+			using (Cell.LineStd) Draw.DualLabel("Time Main", gen.mainTime.ToString("0.00") + "ms");
 		}
-
-		#endif
 
 
 		public static void SelectGenerators (HashSet<Generator> selection, bool shiftForSingleSelect=false)
@@ -665,14 +641,11 @@ namespace MapMagic.Nodes.GUI
 					GraphWindow.RecordCompleteUndo();
 
 					if (outlet == null)
-					{
 						graph.UnlinkInlet(inlet);
-						GraphEditorActions.RemoveLink(graph, inlet);
-					}
 					else if (graph.CheckLinkValidity(outlet,inlet))
 						graph.Link(inlet, outlet);
 
-					GraphWindow.current?.RefreshMapMagic();
+					GraphWindow.current?.RefreshMapMagic(gen, outlet?.Gen);
 				}
 
 				Rect inletRect = new Rect(
@@ -742,7 +715,7 @@ namespace MapMagic.Nodes.GUI
 					if (inlet != null  &&  graph.CheckLinkValidity(outlet,inlet))
 						graph.Link(inlet, outlet);
 
-					GraphWindow.current?.RefreshMapMagic();
+					GraphWindow.current?.RefreshMapMagic(outlet.Gen);
 				}
 
 				Rect outletRect = new Rect(
@@ -833,8 +806,6 @@ namespace MapMagic.Nodes.GUI
 
 						else if (portalExit != null)
 						{
-							IPortalEnter<object> linkedEnter = portalExit.RefreshEnter(graph);
-
 							//icon
 							Cell.EmptyRowPx(offsetSize/2);
 							Texture2D genIcon = UI.current.textures.GetTexture("GeneratorIcons/PortalOut");
@@ -847,8 +818,8 @@ namespace MapMagic.Nodes.GUI
 								 
 							{
 								string label = "(Empty)";
-								if (linkedEnter != null)
-									label = linkedEnter.Name;
+								if (portalExit.Enter != null)
+									label = portalExit.Enter.Name;
 								Draw.Label(label, style:UI.current.styles.bigLabel);
 							}
 
@@ -913,7 +884,7 @@ namespace MapMagic.Nodes.GUI
 			}
 
 			#if MM_DEBUG
-			//if (graph.debugGenInfo)
+			if (graph.debugGenInfo)
 				DrawDebug(gen);
 			#endif
 
@@ -924,13 +895,13 @@ namespace MapMagic.Nodes.GUI
 			}
 		}
 
-		public static T DrawGlobalVar<T> (T val, string label, string tooltip=null)
+		public static T DrawGlobalVar<T> (T val, string label)
 		{
 			using (Cell.RowRel(1-Cell.current.fieldWidth)) 
 			{
 				Cell.EmptyRowPx(3);
 				using (Cell.RowPx(9)) Draw.Icon(UI.current.textures.GetTexture("DPUI/Icons/Linked"));
-				using (Cell.Row) Draw.Label(label, tooltip:tooltip);
+				using (Cell.Row) Draw.Label(label);
 
 				if (val != null  &&  val is float)
 					val = (T)(object)Draw.DragValue((float)(object)val);
@@ -1207,7 +1178,7 @@ namespace MapMagic.Nodes.GUI
 
 				Texture2D splineTex = UI.current.textures.GetTexture("DPUI/SplineTex");
 
-				float curWidth = width*UI.current.scrollZoom.zoom.x+2f;
+				float curWidth = width*UI.current.scrollZoom.zoom+2f;
 
 				//20 skin
 				if (!dotted)
@@ -1369,7 +1340,7 @@ namespace MapMagic.Nodes.GUI
 			public static Color GetGeneratorColor (Generator gen) => GetGeneratorColor(Generator.GetGenericType(gen));
 			public static Color GetGeneratorColor (Type genericType)
 			{
-				if (UI.current.styles.isPro) return GetGeneratorColorPro(genericType);
+				if (StylesCache.isPro) return GetGeneratorColorPro(genericType);
 
 				Color color;
 
@@ -1409,7 +1380,7 @@ namespace MapMagic.Nodes.GUI
 			public static Color GetLinkColor (IOutlet<object> outlet) => GetLinkColor(Generator.GetGenericType(outlet));
 			public static Color GetLinkColor (Type genericType)
 			{
-				bool isPro = UI.current.styles.isPro;
+				bool isPro = StylesCache.isPro;
 
 				if (genericType == typeof(MatrixWorld))
 				{

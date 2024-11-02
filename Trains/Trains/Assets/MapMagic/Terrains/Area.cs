@@ -139,12 +139,12 @@ namespace MapMagic.Terrains
 					full = GetFullDimensions(active, margins);
 				}
 
-				public Area (Coord coord, int activeResolution, int margins, Vector2D tileSize)
+				public Area (Coord coord, int activeResolution, int margins, Vector2D activeWorldSize)
 				{
 					active = new Dimensions(
 						rect: new CoordRect( coord.x*activeResolution, coord.z*activeResolution, activeResolution, activeResolution ),
-						worldPos: new Vector2D(coord.x*tileSize.x, coord.z*tileSize.z),
-						worldSize: new Vector2D(tileSize.x, tileSize.z));
+						worldPos: new Vector2D(coord.x*activeWorldSize.x, coord.z*activeWorldSize.z),
+						worldSize: new Vector2D(activeWorldSize.x, activeWorldSize.z));
 
 					full = GetFullDimensions(active, margins);
 				}

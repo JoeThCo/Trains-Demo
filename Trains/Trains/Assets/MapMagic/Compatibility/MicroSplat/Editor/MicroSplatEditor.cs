@@ -58,16 +58,10 @@ namespace MapMagic.Nodes.GUI
 					
 							#if __MICROSPLAT__
 							if (GraphWindow.current.mapMagic.Globals.assignComponent)
-							{
 								using (Cell.LineStd) 
 									GraphWindow.current.mapMagic.Globals.microSplatPropData = GeneratorDraw.DrawGlobalVar<MicroSplatPropData>(
 										GraphWindow.current.mapMagic.Globals.microSplatPropData==null ? null : (MicroSplatPropData)mapMagicObject.globals.microSplatPropData, 
-										"PropData", tooltip:"_propdata asset that was generated automatically. Necessary to make some MS features work, like triplanar.");
-								using (Cell.LineStd) 
-									GraphWindow.current.mapMagic.Globals.microSplatTexArrConfig = GeneratorDraw.DrawGlobalVar<TextureArrayConfig>(
-										GraphWindow.current.mapMagic.Globals.microSplatTexArrConfig==null ? null : (TextureArrayConfig)mapMagicObject.globals.microSplatTexArrConfig, 
-										"Tex Arr Cfg", tooltip:"TextureArrayConfig asset used to create Texture Array. Neede to apply proper splat maps to newly created terrains.");
-							}
+										"PropData");
 							#endif
 
 							//using (Cell.LineStd) 
@@ -167,13 +161,11 @@ namespace MapMagic.Nodes.GUI
 					GraphWindow.current.mapMagic is MapMagicObject mapMagicObject  && 
 					mapMagicObject.globals.microSplatApplyType!=Globals.MicroSplatApplyType.Textures) //no need to create layers for textures-only mode
 				{
-					TerrainLayer tlayer = layer.prototype; 
+					TerrainLayer tlayer = layer.prototype;
 					if (tlayer == null)
 						{ tlayer = new TerrainLayer(); layer.prototype = tlayer; }
 					if (tlayer.diffuseTexture == null)
 						tlayer.diffuseTexture = lastIconsArr.GetTexture(num);
-					else
-						tlayer.name = tlayer.diffuseTexture.name;
 				}
 
 				Cell.EmptyRowPx(10);

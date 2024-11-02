@@ -26,8 +26,6 @@ namespace MapMagic.Terrains
 
 		public bool preview = true;
 
-		public TerrainData defaultTerrainData;
-
 		public Rect WorldRect => new Rect(coord.x*mapMagic.tileSize.x, coord.z*mapMagic.tileSize.z, mapMagic.tileSize.x, mapMagic.tileSize.z);
 		public Vector2D Min => new Vector2D(coord.x*mapMagic.tileSize.x, coord.z*mapMagic.tileSize.z);
 		public Vector2D Max => new Vector2D((coord.x+1)*mapMagic.tileSize.x, (coord.z+1)*mapMagic.tileSize.z);
@@ -314,7 +312,7 @@ namespace MapMagic.Terrains
 				coord = newCoord;
 
 				//if (IsGenerating) //stopping anyway just in case
-					Stop();
+					StopGenerate();
 
 				//clearing
 				main?.data?.Clear(inSubs:true);
@@ -379,7 +377,7 @@ namespace MapMagic.Terrains
 
 			public void Remove ()
 			{
-				Stop();
+				StopGenerate();
 
 				#if UNITY_EDITOR
 				if (!UnityEditor.EditorApplication.isPlaying)
@@ -412,13 +410,7 @@ namespace MapMagic.Terrains
 				Terrain terrain = go.AddComponent<Terrain>();
 				TerrainCollider terrainCollider = go.AddComponent<TerrainCollider>();
 
-				TerrainData terrainData;
-				TerrainData template = Resources.Load<TerrainData>("MapMagicDefaultTerrainData");
-				if (template != null)	
-					terrainData = GameObject.Instantiate(template); 
-				else
-					terrainData = new TerrainData(); 
-
+				TerrainData terrainData = new TerrainData();
 				terrain.terrainData = terrainData;
 				terrainCollider.terrainData = terrainData;
 				terrainData.size = (Vector3)mapMagic.tileSize;
@@ -575,37 +567,6 @@ namespace MapMagic.Terrains
 
 		#region Threaded
 
-			public void Refresh (Graph graph, bool clearAll=false) 
-			/// Stops ongoing tasks, clears change, starts again - in that order.
-			/// Clear change between stop and start - stopping it after clearing change might result in some output ready - with outdated data
-			{
-				if (main != null)
-					StopTask(main); //stopping only main tiles - drafts update one by one until the end
-
-				ClearChanged(graph, clearAll);
-
-				StartGenerate(graph, generateMain:true, generateLod:true);
-			}
-
-
-			public void ClearChanged (Graph graph, bool clearAll=false)
-			{
-				if (clearAll)
-				{
-					Stop(); //this will reset tile tasks
-
-					main?.data?.Clear(inSubs:true);
-					draft?.data?.Clear(inSubs:true); 
-				}
-
-				if (main?.data!=null) 
-					graph.ClearChanged(main.data, clearAll);
-					
-				if (draft?.data!=null) 
-					graph.ClearChanged(draft.data, clearAll);
-			}
-
-
 			public void StartGenerate (Graph graph, bool generateMain=true, bool generateLod=true)
 			/// Starts generating tile in a separate thread (or just enqueues it if `launch` is set to false)
 			{
@@ -629,7 +590,7 @@ namespace MapMagic.Terrains
 					draft.applyReady = false;
 					draft.generateReady = false;
 
-					EnqueueDraftTask(draft, graph, Priority+1000, "Draft");
+					EnqueueTask(draft, graph, Priority+1000, "Draft");
 				}
 
 				//starting main
@@ -646,36 +607,15 @@ namespace MapMagic.Terrains
 					main.applyReady = false;
 					main.generateReady = false;
 
-					EnqueueMainTask(main, graph, Priority, "Main");
+					StopEnqueueTask(main, graph, Priority, "Main");
 					//EnqueueTask(main, graph, Priority, "Main");
 				}
 
 				SwitchLod(); //switching to draft if needed
 			}
 
-
-			private void EnqueueMainTask (DetailLevel det, Graph graph, int priority=0, string name="Task")
-			///TODO: unify enqueue and test. The only difference is in capturing stop
-			{
-				if (det.task == null  ||  !det.task.Enqueued)
-				{
-					Prepare(graph, this, main);
-
-					det.stop = new StopToken();
-					StopToken stop = det.stop; //closure var
-					det.task = new ThreadManager.Task() { 
-						action = ()=>Generate(graph, this, det, stop), 
-						priority = priority, 
-						name = name + " " + coord };
-					ThreadManager.Enqueue(det.task);
-				}
-				//do nothing if task enqueued
-
-				det.task.priority = priority;
-			}
-
-
-			private void EnqueueDraftTask (DetailLevel det, Graph graph, int priority=0, string name="Task")
+			private void EnqueueTask (DetailLevel det, Graph graph, int priority=0, string name="Task")
+			/// Will run task no matter if previous task is running (draft-style)
 			{
 				if (det.task == null)
 				{
@@ -700,59 +640,7 @@ namespace MapMagic.Terrains
 			}
 
 
-			private void StopTask (DetailLevel det, bool dequeue=true)
-			/// Will stop previous task before running
-			{
-				//stopping coroutines
-				if (det.applyMainCoroutines == null) det.applyMainCoroutines = new Stack<CoroutineManager.Task>();
-				while (det.applyMainCoroutines.Count != 0)
-					CoroutineManager.Stop(det.applyMainCoroutines.Pop());
-
-				if (det.switchLodCoroutine != null)
-					CoroutineManager.Stop(det.switchLodCoroutine);
-
-				if (det.coroutine != null)
-					CoroutineManager.Stop(det.coroutine);
-
-				//dequeue
-				if (dequeue && det.task!=null)
-				{
-					#if MM_DEBUG
-					if (det.task.Enqueued)
-						Log.AddThreaded("TerrainTile.StopEnqueueTask Dequeuening", ("coord:",det.data?.area?.Coord), ("draft:",det.data?.isDraft)); 
-					#endif
-
-					ThreadManager.Dequeue(det.task);
-				}
-
-				//active
-				if (det.task != null  &&  det.task.Active) 
-				{
-					if (det.stop != null)
-					{
-						det.stop.stop = true;
-						det.stop.restart = false;
-
-						#if MM_DEBUG
-						Log.AddThreaded("TerrainTile.StopEnqueueTask ActiveStopped", ("coord:",det.data?.area?.Coord), ("draft:",det.data?.isDraft)); 
-						#endif
-					}
-				}
-
-				//forgetting task if it was dequeued
-				if (dequeue)
-					det.task = null;
-			}
-
-
-			public void Stop ()
-			{
-				if (main != null) StopTask(main, dequeue:true);
-				if (draft != null) StopTask(draft, dequeue:true);
-			}
-
-
-			[Obsolete] private void StopEnqueueTask (DetailLevel det, Graph graph, int priority=0, string name="Task")
+			private void StopEnqueueTask (DetailLevel det, Graph graph, int priority=0, string name="Task")
 			/// Will stop previous task before running
 			{
 				if (det.applyMainCoroutines == null) det.applyMainCoroutines = new Stack<CoroutineManager.Task>();
@@ -764,22 +652,11 @@ namespace MapMagic.Terrains
 
 				if (det.coroutine != null)
 					CoroutineManager.Stop(det.coroutine);
-
-				if (det.task != null) 
-				{
-					#if MM_DEBUG
-					Log.AddThreaded("TerrainTile.StopEnqueueTask Test", ("coord:",det.data.area.Coord), ("active:",det.task.Active), ("cl graph ver:",graph.IdsVersionsHash()));
-					#endif
-				}
 
 				if (det.task != null  &&  det.task.Active) 
 				{
 					det.stop.stop = true;
 					//and forget about this task
-
-					#if MM_DEBUG
-					Log.AddThreaded("TerrainTile.StopEnqueueTask Stopped", ("coord:",det.data.area.Coord), ("cl graph ver:",graph.IdsVersionsHash()));
-					#endif
 				}
 
 				if (det.task == null  ||  !det.task.Enqueued)
@@ -797,8 +674,26 @@ namespace MapMagic.Terrains
 				//do nothing if task enqueued
 
 				det.task.priority = priority;
-			}
 
+
+				//Alternative:
+				/*if (det.task != null)
+				{
+					ThreadManager.Dequeue(det.task); //if enqueued
+					det.stop.stop = true;			  //if active
+					//and forget about this task
+				}
+
+				Prepare(graph, this, main);
+
+				det.stop = new StopToken();
+				StopToken mainStop = det.stop; //closure var
+				det.task = new ThreadManager.Task() { 
+					action = ()=>Generate(graph, this, main, mainStop), 
+					priority = Priority, 
+					name = "Main " + coord };
+				ThreadManager.Enqueue(det.task);*/
+			}
 
 			private void Prepare (Graph graph, TerrainTile tile, DetailLevel det)
 			{
@@ -935,6 +830,31 @@ namespace MapMagic.Terrains
 					//Prepare(graph, this, det);
 					if (!det.task.Enqueued) ThreadManager.Enqueue(det.task); 
 				}
+			}
+
+
+			public void StopGenerate ()
+			{
+				if (main != null) StopGenerate(main);
+				if (draft != null) StopGenerate(draft);
+			}
+
+
+			private void StopGenerate (DetailLevel det)
+			{
+				if (det.task != null) 
+				{
+					det.stop.stop = true;
+					det.stop.restart = false;
+					ThreadManager.Dequeue(det.task);
+				}
+
+				if (det.applyMainCoroutines != null)
+					foreach (CoroutineManager.Task coroutine in main.applyMainCoroutines)
+							CoroutineManager.Stop(coroutine);
+
+				det.task = null;
+				if (det.stop != null) det.stop.stop = true; //det.stop = null;
 			}
 
 

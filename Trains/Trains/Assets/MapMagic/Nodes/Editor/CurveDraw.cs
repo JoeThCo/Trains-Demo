@@ -44,7 +44,7 @@ namespace MapMagic.Nodes.GUI
 				Draw.Grid(new Color(0,0,0,0.4f)); //background grid
 			}
 
-			if (UI.current.scrollZoom == null || UI.current.scrollZoom.zoom.x > 0.75f) 
+			if (UI.current.scrollZoom == null || UI.current.scrollZoom.zoom > 0.75f) 
 				CurveDraw.DragCurve(curve);
 			CurveDraw.DisplayCurve(curve);
 		}
@@ -150,7 +150,7 @@ namespace MapMagic.Nodes.GUI
 			if (UI.current.optimizeElements && !UI.current.IsInWindow()) return;
 
 			//drawing curve nodes
-			if (UI.current.scrollZoom == null  ||  UI.current.scrollZoom.zoom.x > nodesDraggedZoom)
+			if (UI.current.scrollZoom == null  ||  UI.current.scrollZoom.zoom > nodesDraggedZoom)
 				for (int i=0; i<curve.points.Length; i++)
 			{
 				Vector2 cellPos = ToCell(curve.points[i].pos);
@@ -181,12 +181,12 @@ namespace MapMagic.Nodes.GUI
 
 			UnityEditor.Handles.color = Color.black;
 
-			if (UI.current.scrollZoom == null  ||  UI.current.scrollZoom.zoom.x > nodesDraggedZoom)
+			if (UI.current.scrollZoom == null  ||  UI.current.scrollZoom.zoom > nodesDraggedZoom)
 			for (int i=0; i<curve.points.Length; i++)
 				DrawPoint(curve.points[i]);
 
 			int numSubSegments = UI.current.scrollZoom != null ?
-				(int)(maxSubSegments*UI.current.scrollZoom.zoom.x) :
+				(int)(maxSubSegments*UI.current.scrollZoom.zoom) :
 				maxSubSegments;
 			if (numSubSegments < 3) numSubSegments = 3;
 			Vector3[] posArray = new Vector3[numSubSegments]; //positions array re-use
@@ -207,8 +207,8 @@ namespace MapMagic.Nodes.GUI
 
 		private static void DrawPoint (Curve.Node node)
 		{
-			float zoom = UI.current.scrollZoom != null ? UI.current.scrollZoom.zoom.x : 1;
-			float scrolledSize = pointSize*UI.current.scrollZoom.zoom.x / 2f  +  pointSize / 2f;
+			float zoom = UI.current.scrollZoom != null ? UI.current.scrollZoom.zoom : 1;
+			float scrolledSize = pointSize*UI.current.scrollZoom.zoom / 2f  +  pointSize / 2f;
 			
 			Vector2 cellPos = ToCell(node.pos);
 			Vector2 dispPos = UI.current.scrollZoom != null ? 

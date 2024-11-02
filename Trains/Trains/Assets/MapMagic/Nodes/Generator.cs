@@ -141,9 +141,9 @@ namespace MapMagic.Nodes
 	/// Passes the current graph commands to sub graph(s)
 	{
 		Graph SubGraph { get; }
-		TileData SubData (TileData parent);  //clusters have non-hierarchial sub-data
 		Expose.Override Override { get; set; }
 	}
+
 
 	public interface ICustomDependence
 	/// Makes PriorGens generated before generating this one
@@ -169,22 +169,9 @@ namespace MapMagic.Nodes
 	public interface ICustomClear 
 	/// Performs additional actions before clearing (like clearing sub-datas)
 	{
-		void OnClearing (Graph graph, TileData data, ref bool isReady, bool totalRebuild=false);  //calls when clearing all nodes, true if this node is changed
-		//Not that regular change check if still performed on node
-		//isReady: this call happens before marking ready in data, so isReady = default ready check (inlets, portals, etc).
-		//Setting isReady to true will NOT mark this generator as ready on clear (while setting to false will)
-		//totalRebuild: some nodes like Cluster require knowing whether user pressed "Rebuild" to do some flush actions on clear
-
-		//void ClearDirectly (TileData data);  //Called by graph if gen field was changed. Will call data.ClearReady(gen) beforehand anyway
-		//void ClearRecursive (TileData data);  //Called by graph on clearing recursive (no matter ready or not). Inlets are already cleared to this moment
-		//void ClearAny (Generator gen, TileData data); //Called at top level graph each time any node changes. Iterating in sub-graph is done with this
-	}
-
-	public interface ICustomSerialize
-	/// Same as ISerializationCallbackReciever but with provided graph
-	{
-		void OnBeforeSerialize (Graph graph);
-		void OnAfterDeserialize (Graph graph);
+		void ClearDirectly (TileData data);  //Called by graph if gen field was changed. Will call data.ClearReady(gen) beforehand anyway
+		void ClearRecursive (TileData data);  //Called by graph on clearing recursive (no matter ready or not). Inlets are already cleared to this moment
+		void ClearAny (Generator gen, TileData data); //Called at top level graph each time any node changes. Iterating in sub-graph is done with this
 	}
 
 
@@ -206,8 +193,6 @@ namespace MapMagic.Nodes
 		public bool advancedOptions = false;
 		public Type colorType = null; ///> to display the node in the color of given outlet type
 		public Type updateType;  ///> The class legacy generator updates to when clicking Update
-		public string codeFile;
-		public int codeLine;
 
 		//these are assigned on load attribute in gen and should be null by default
 		public string nameUpper;
@@ -244,19 +229,14 @@ namespace MapMagic.Nodes
 		public ulong LinkedOutletId { get; set; }  //if it's inlet. Assigned every before each clear or generate
 		public ulong LinkedGenId { get; set; } 
 
-		public ulong version; //increment with GUI each time any parameter change to compare with data's last generated version to see if it's ready
-
-		#if MM_DEBUG
 		public double draftTime;
 		public double mainTime;
-		#endif
 
 		public Vector2 guiPosition;
 		public Vector2 guiSize;  //to add this node to group
 
 		public bool guiPreview; //is preview for this generator opened
 		public bool guiAdvanced;
-		public bool guiDebug;
 
 		//just to avoid implementing it in each generator
 		public Generator Gen { get{ return this; } }
@@ -345,16 +325,5 @@ namespace MapMagic.Nodes
 			}}
 
 		#endregion
-
-		public virtual (string, int) GetCodeFileLine () => GetCodeFileLineBase();
-
-		public (string, int) GetCodeFileLineBase (
-			[System.Runtime.CompilerServices.CallerFilePath] string sourceFilePath = "",
-			[System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = 0)
-		{
-			return (sourceFilePath, sourceLineNumber);
-			//var sf = new System.Diagnostics.StackTrace(1).GetFrame(0);
-			//return (sf.GetFileName(), sf.GetFileLineNumber());
-		}
 	}
 }

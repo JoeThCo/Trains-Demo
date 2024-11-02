@@ -16,17 +16,6 @@ namespace Den.Tools.Splines
 		public bool looped;
 		public float length;
 
-		public Vector3 startPos
-		{
-			get => segments[0].start.pos;
-			set => segments[0].start.pos = value;
-		}
-
-		public Vector3 endPos
-		{
-			get => segments[segments.Length-1].end.pos;
-			set => segments[segments.Length-1].end.pos = value;
-		}
 
 		public Line () {}
 		public Line (Line src)
@@ -243,7 +232,6 @@ namespace Den.Tools.Splines
 
 			public Vector3[] GetAllPoints (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
 			/// Converts line into array of points to draw polyline
-			/// resPerUnit defines how many points will be created for 1 meter of spline. Then min/maxRes clamps the amount of points per segment.
 			/// Requires length updated
 			{
 				//calculating number of points
@@ -278,47 +266,6 @@ namespace Den.Tools.Splines
 				points[points.Length-1] = segments[segments.Length-1].end.pos;
 
 				return points; 
-			}
-
-			public (Vector3[], Vector3[]) GetAllPointsDerivatives (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
-			/// Copy of GetAllPoints, but returns derivatives as well
-			/// TODO: replace with CalcPointsNum and FillPoints
-			{
-				//calculating number of points
-				int numPoints = 0;
-				for (int s=0; s<segments.Length; s++)
-				{
-					int modRes = (int)( segments[s].length * resPerUnit );
-					if (modRes < minRes) modRes = minRes;
-					if (modRes > maxRes) modRes = maxRes;
-
-					numPoints += modRes;
-				}
-
-				Vector3[] points = new Vector3[numPoints + 1];
-				Vector3[] derivatives = new Vector3[numPoints + 1];
-			
-				int i=0;
-				for (int s=0; s<segments.Length; s++)
-				{
-					int modRes = (int)( segments[s].length * resPerUnit );
-					if (modRes < minRes) modRes = minRes;
-					if (modRes > maxRes) modRes = maxRes;
-
-					for (int p=0; p<modRes; p++)
-					{
-						float percent = 1f*p / modRes;
-						points[i] = segments[s].GetPoint(percent);
-						derivatives[i] = segments[s].GetDerivative(percent);
-						i++;
-					}
-				}
-
-				//the last one
-				points[points.Length-1] = segments[segments.Length-1].end.pos;
-				derivatives[points.Length-1] = -segments[segments.Length-1].end.dir;
-
-				return (points, derivatives); 
 			}
 
 

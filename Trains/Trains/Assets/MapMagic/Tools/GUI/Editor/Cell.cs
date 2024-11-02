@@ -519,18 +519,6 @@ namespace Den.Tools.GUI
 			}}
 
 
-			public static Cell LineMultiStd (int numLines)
-			{
-				Cell cell = GetCell();
-				cell.stackVer = true;
-				cell.relativeSize = new Vector2(1,0);
-				cell.pixelSize = new Vector2(0, numLines*lineHeight);
-//				cell.pixelOffset = new Vector2(0,0);
-				cell.Activate();
-				return cell;
-			}
-
-
 			public static Cell Row
 			{get{
 				Cell cell = GetCell();

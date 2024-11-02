@@ -2050,7 +2050,6 @@ namespace Den.Tools.Matrices
 				}
 			#endif
 
-
 			public static void CopyRect (Matrix src, Matrix dst, CoordRect rect) => ReadMatrix(src, dst, rect);
 			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
 				[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ReadMatrixRect")]
@@ -2074,28 +2073,6 @@ namespace Den.Tools.Matrices
 						}
 				}
 			#endif
-
-
-				static public void ReadMatrixUnfilled (Matrix src, Matrix dst, CoordRect rect)
-				/// The same, but only within given rect
-				{
-					CoordRect intersection = CoordRect.Intersected(rect, dst.rect);
-					intersection = CoordRect.Intersected(src.rect, intersection);
-					Coord min = intersection.Min; Coord max = intersection.Max;
-
-					for (int x=min.x; x<max.x; x++)
-						for (int z=min.z; z<max.z; z++)
-						{
-							int dstPos = (z-dst.rect.offset.z)*dst.rect.size.x + x - dst.rect.offset.x;
-							if (dst.arr[dstPos] > 0.00001f)
-								continue;
-
-							int srcPos = (z-src.rect.offset.z)*src.rect.size.x + x - src.rect.offset.x;
-							dst.arr[dstPos] = src.arr[srcPos];
-						}
-				}
-
-
 
 			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
 				[DllImport ("NativePlugins", CallingConvention = CallingConvention.Cdecl, EntryPoint = "MatrixCopyResized")]

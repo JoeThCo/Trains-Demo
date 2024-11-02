@@ -22,7 +22,7 @@ namespace MapMagic.Previews
 {	
 	public static class PreviewDraw
 	{
-		public static Color BackgroundColor =>  UI.current.styles.isPro ? 
+		public static Color BackgroundColor =>  StylesCache.isPro ? 
 			new Color(0.3f, 0.3f, 0.3f, 1) : 
 			new Color(0.4f, 0.4f, 0.4f, 1);
 		private static Material textureRawMat;
@@ -42,7 +42,7 @@ namespace MapMagic.Previews
 			//preview itself
 			using (Cell.Full)
 			{
-				Color backColor = UI.current.styles.isPro ? 
+				Color backColor = StylesCache.isPro ? 
 						new Color(0.33f, 0.33f, 0.33f, 1) : 
 						new Color(0.4f, 0.4f, 0.4f, 1);
 				Draw.Rect(BackgroundColor);  //background in case no preview, or preview object was not assigned
@@ -115,7 +115,7 @@ namespace MapMagic.Previews
 				using (Cell.Full)
 					using (Cell.Custom(center, Vector2.one))
 			{
-				Cell.current.pixelSize = new Vector2( tex.width/UI.current.scrollZoom.zoom.x, tex.height/UI.current.scrollZoom.zoom.y );
+				Cell.current.pixelSize = new Vector2( tex.width/UI.current.scrollZoom.zoom, tex.height/UI.current.scrollZoom.zoom );
 				Cell.current.pixelOffset -= Cell.current.pixelSize / 2;
 
 				Draw.Texture(tex);

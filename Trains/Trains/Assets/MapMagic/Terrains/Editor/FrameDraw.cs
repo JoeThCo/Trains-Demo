@@ -51,8 +51,7 @@ namespace MapMagic.Terrains.GUI
 				if (!terrainLinesCache.TryGetValue(terrain, out PolyLine polyLine))
 				{
 					polyLine = CreateTerrainLine(terrain);
-					if (polyLine != null) //if weak table has null it can't convert and crashes Unity
-						terrainLinesCache.Add(terrain, polyLine);
+					terrainLinesCache.Add(terrain, polyLine);
 				}
 
 				else
@@ -62,9 +61,7 @@ namespace MapMagic.Terrains.GUI
 					{
 						polyLine = CreateTerrainLine(terrain);
 						terrainLinesCache.Remove(terrain);
-
-						if (polyLine != null)
-							terrainLinesCache.Add(terrain, polyLine);
+						terrainLinesCache.Add(terrain, polyLine);
 					}
 
 					else
@@ -164,8 +161,7 @@ namespace MapMagic.Terrains.GUI
 			if (!terrainLinesCache.TryGetValue(terrain, out PolyLine polyLine))
 			{
 				polyLine = CreateTerrainLine(terrain);
-				if (polyLine != null) //if weak table has null it can't convert and crashes Unity
-					terrainLinesCache.Add(terrain, polyLine);
+				terrainLinesCache.Add(terrain, polyLine);
 			}
 
 			polyLine.DrawLine(color, width, dotted ? terrain.terrainData.size.x/dotsPerSide : 0, offset:offset, parent:terrain.transform);

@@ -200,7 +200,8 @@ namespace MapMagic.Core.GUI
 						UnityEditor.Undo.RegisterFullObjectHierarchyUndo(terrain.terrainData, "RefreshAll");
 					EditorUtility.SetDirty(mapMagic);
 
-					mapMagic.Refresh(clearAll:true);
+					mapMagic.ClearAll();
+					mapMagic.StartGenerate();
 				}
 
 				Draw.Label("Generate", style:UI.current.styles.middleCenterLabel);
@@ -214,7 +215,7 @@ namespace MapMagic.Core.GUI
 				using (Cell.Padded(0,0,-2,-1))
 					if (Draw.Button("", style:style)) 
 				{
-					mapMagic.Refresh(clearAll:false);
+					mapMagic.StartGenerate();
 				}
 					
 				Draw.Label("Generate Changed", style:UI.current.styles.middleCenterLabel);
@@ -238,78 +239,45 @@ namespace MapMagic.Core.GUI
 			//Infinite Terrain
 			Cell.EmptyLinePx(4);
 			using (Cell.LineStd)
-				using (new Draw.FoldoutGroup(ref mapMagic.guiInfiniteTerrains, "Tiles Generation", isLeft:true))
+				using (new Draw.FoldoutGroup(ref mapMagic.guiInfiniteTerrains, "Infinite Terrain (Playmode)", isLeft:true))
 					if (mapMagic.guiInfiniteTerrains)
 					{
+						using (Cell.LineStd) Draw.ToggleLeft(ref mapMagic.tiles.generateInfinite, "Generate Infinite Terrain");
 
-						using (Cell.LineStd) Draw.ToggleLeft(ref mapMagic.tiles.generateInfinite, "Generate Terrain in Playmode");
+						using (Cell.LineStd) Draw.Field(ref mapMagic.mainRange, "Main Range");
 						using (Cell.LineStd) 
 						{
-							Cell.current.disabled = !mapMagic.tiles.generateInfinite;
-
-							using (Cell.LineStd) 
+							if (!mapMagic.draftsInPlaymode) 
 							{
-								using (Cell.LineStd) Draw.Field(ref mapMagic.mainRange, "Main Range");
-								using (Cell.LineStd) 
-								{
-									if (!mapMagic.draftsInPlaymode) 
-									{
-										Cell.current.disabled = true;
-										mapMagic.tiles.generateRange = mapMagic.mainRange;
-									}
-
-									Draw.Field(ref mapMagic.tiles.generateRange, "Drafts Range");
-								}
+								Cell.current.disabled = true;
+								mapMagic.tiles.generateRange = mapMagic.mainRange;
 							}
 
-							Cell.EmptyLinePx(4);
-							using (Cell.LineStd) Draw.Label("Generate Terrain Markers:");
-							
-							//main camera
-							using (Cell.LineStd) Draw.Toggle(ref mapMagic.tiles.genAroundMainCam, "Around Main Camera");
-							
-							//tags
-							using (Cell.LineStd) 
-							{
-								using (Cell.RowRel(1-Cell.current.fieldWidth))
-									Draw.Label("Around Objects Tagged");
-
-								using (Cell.RowRel(Cell.current.fieldWidth))
-								{
-									using (Cell.RowPx(20))
-										Draw.Toggle(ref mapMagic.tiles.genAroundObjsTag);
-
-									using (Cell.Row)
-										mapMagic.tiles.genAroundTag = Draw.Field(
-											mapMagic.tiles.genAroundTag, 
-											drawFn:(Rect rect, string oldVal) => { return EditorGUI.TagField(rect, (string)oldVal); } );
-								}
-							}
-
-							//coord
-							using (Cell.LineStd) 
-							{
-								using (Cell.RowRel(1-Cell.current.fieldWidth))
-									using (Cell.LineStd) //to make it at top line
-										Draw.Label("Around Coordinate");
-
-								using (Cell.RowRel(Cell.current.fieldWidth))
-								{
-									using (Cell.RowPx(20))
-										Draw.Toggle(ref mapMagic.tiles.genAroundCoordinate);
-
-									using (Cell.Row)
-									{
-										Cell.current.disabled = mapMagic.tiles.genAroundCoordinate;
-										Draw.Field(ref mapMagic.tiles.genCoordinate);
-									}
-								}
-							}
+							Draw.Field(ref mapMagic.tiles.generateRange, "Drafts Range");
 						}
 
 						Cell.EmptyLinePx(4);
 						using (Cell.LineStd) Draw.ToggleLeft(ref mapMagic.hideFarTerrains, "Hide Out-of-Range Terrains");
 					
+						Cell.EmptyLinePx(4);
+						using (Cell.LineStd) Draw.Label("Generate Terrain Markers:");
+						using (Cell.LineStd) Draw.Toggle(ref mapMagic.tiles.genAroundMainCam, "Around Main Camera");
+						using (Cell.LineStd) 
+						{
+							using (Cell.RowRel(1-Cell.current.fieldWidth))
+								Draw.Label("Around Objects Tagged");
+
+							using (Cell.RowRel(Cell.current.fieldWidth))
+							{
+								using (Cell.RowPx(20))
+									Draw.Toggle(ref mapMagic.tiles.genAroundObjsTag);
+
+								using (Cell.Row)
+									mapMagic.tiles.genAroundTag = Draw.Field(
+										mapMagic.tiles.genAroundTag, 
+										drawFn:(Rect rect, string oldVal) => { return EditorGUI.TagField(rect, (string)oldVal); } );
+							}
+						}
 					}
 
 			//Size and Resolution
@@ -369,9 +337,6 @@ namespace MapMagic.Core.GUI
 
 							mapMagic.ApplyTileSettings();
 						}
-
-						Cell.EmptyLinePx(6);
-						using (Cell.LineStd) Draw.ToggleLeft(mapMagic.clearOnNodeRemove, "Clear Generated on Node Remove");
 					}
 
 			//Outputs settings
@@ -500,10 +465,6 @@ namespace MapMagic.Core.GUI
 								using (Cell.LineStd) Draw.Field(ref mapMagic.globals.grassResDownscale, "Resolution Downscale");
 								using (Cell.LineStd) Draw.Field(ref mapMagic.globals.grassResPerPatch, "Resolution per Patch");
 
-								#if UNITY_2022_2_OR_NEWER
-								using (Cell.LineStd) GeneratorDraw.DrawGlobalVar(ref mapMagic.globals.grassScatterMode, "Scatter Mode");
-								#endif
-
 								Cell.EmptyLinePx(2);
 							}
 						}
@@ -524,7 +485,9 @@ namespace MapMagic.Core.GUI
 						
 						if (Cell.current.valChanged)
 						{
-							mapMagic.Refresh(clearAll:true);
+							mapMagic.ClearAll();
+							if (mapMagic.instantGenerate)
+								mapMagic.StartGenerate();
 						}
 					}
 

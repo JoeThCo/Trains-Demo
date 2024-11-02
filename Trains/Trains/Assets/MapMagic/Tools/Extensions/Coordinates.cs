@@ -136,8 +136,6 @@ namespace Den.Tools
 
 		public static Rect Extended (this Rect rect, float r, float l, float t, float b) { return new Rect(rect.x-l, rect.y-t, rect.width+r+l, rect.height+t+b); }
 
-		public static Rect Extended (this Rect rect, RectOffset a) { return new Rect(rect.x-a.left, rect.y-a.top, rect.width+a.right+a.left, rect.height+a.top+a.bottom); }
-
 		public static Rect Encapsulate (this Rect r, Rect n)
 		{
 			if (n.xMin < r.xMin) r.xMin = n.xMin;

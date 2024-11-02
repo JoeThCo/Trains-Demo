@@ -46,6 +46,8 @@ namespace Den.Tools.GUI
 		public void SetPointsThread (Vector3[][] points, int numPoints=-1)
 		/// Prepares points in thread. SetPointsApply should be called after
 		{
+
+
 			if (numPoints < 0)
 			{
 				numPoints = 0;
@@ -54,12 +56,7 @@ namespace Den.Tools.GUI
 			}
 
 			if (numPoints<=1) 
-			{
-				//throw new System.Exception("Line points number is <= 1");
-				//I see no reason why empty spline should be an error
-
-				vertices = new Vector3[0];
-			}
+				throw new System.Exception("Line points number is <= 1");
 
 			pointsCount = numPoints;
 			//if (mesh == null) SetMesh(numPoints);

@@ -186,27 +186,6 @@ namespace MapMagic.Nodes.GUI
 				create.subItems.Add(separator);
 			}
 
-			//adding group and comment fields
-			{ 
-				Item item = new Item( );
-				item.name = "Group";
-				item.priority = 9998; 
-				item.icon = RightClick.texturesCache.GetTexture("MapMagic/Popup/GroupAdd"); 
-				item.color =  RightClick.defaultColor;
-				item.onClick = ()=> MapMagic.Nodes.GUI.GroupRightClick.CreateGroup(mousePos, graph);
-				create.subItems.Add(item);
-			}
-
-			{ 
-				Item item = new Item( );
-				item.name = "Comment";
-				item.priority = 9998; 
-				item.icon = RightClick.texturesCache.GetTexture("MapMagic/Popup/Comment"); 
-				item.color =  RightClick.defaultColor;
-				item.onClick = ()=> MapMagic.Nodes.GUI.GroupRightClick.CreateComment(mousePos, graph);
-				create.subItems.Add(item);
-			}
-
 			return create;
 		}
 
@@ -244,7 +223,7 @@ namespace MapMagic.Nodes.GUI
 									graph.Link(createdOutlet, inlet);
 							}
 
-							GraphWindow.current?.RefreshMapMagic();
+							GraphWindow.current?.RefreshMapMagic(createdGen);
 						};
 					}
 			}
@@ -300,7 +279,7 @@ namespace MapMagic.Nodes.GUI
 
 							graph.AutoLink(createdGen, clickedOutlet);
 
-							GraphWindow.current?.RefreshMapMagic();
+							GraphWindow.current?.RefreshMapMagic(createdGen);
 						};
 					}
 			}

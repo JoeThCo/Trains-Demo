@@ -36,16 +36,6 @@ namespace Den.Tools
 			}
 		}
 
-		public (Vector2D,Vector2D) FrontRight2D
-		{
-			get {
-				float yaw = Yaw;
-				Vector2D front = new Vector2D( Mathf.Sin(yaw*Mathf.Deg2Rad), Mathf.Cos(yaw*Mathf.Deg2Rad) );
-				Vector2D right = new Vector2D(front.z, -front.x);
-				return (front,right);
-			}
-		}
-
 		public Transition (float x, float z)
 		/// Adds empty transition at coordinates
 		{

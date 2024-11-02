@@ -19,11 +19,9 @@ namespace MapMagic.Nodes.MatrixGenerators
 		drawButtons = false,
 		colorType = typeof(MatrixWorld), 
 		iconName="GeneratorIcons/GrassOut",
-		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Grass")]
+		helpLink = "https://gitlab.com/denispahunov/mapmagic/wikis/output_generators/Grass")]
 	public class GrassOutput200 : OutputGenerator, IInlet<MatrixWorld>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public OutputLevel outputLevel = OutputLevel.Main;
 		public override OutputLevel OutputLevel { get{ return outputLevel; } }
 
@@ -32,6 +30,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 
 		public enum GrassRenderMode { Grass, Billboard, MeshVertexLit, MeshUnlit };
 		public GrassRenderMode renderMode;
+
 
 		public override void Generate (TileData data, StopToken stop) 
 		{
@@ -80,11 +79,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
 			ApplyData applyData = new ApplyData() {detailLayers=detailArr, detailPrototypes=prototypes, patchResolution=data.globals.grassResPerPatch};
-			
-			#if UNITY_2022_2_OR_NEWER
-			applyData.scatterMode = data.globals.grassScatterMode;
-			#endif
-
 			Graph.OnOutputFinalized?.Invoke(typeof(GrassOutput200), data, applyData, stop);
 			data.MarkApply(applyData);
 		}
@@ -151,11 +145,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 			public int[][,] detailLayers;
 			public DetailPrototype[] detailPrototypes;
 			public int patchResolution = 16;
-
-			#if UNITY_2022_2_OR_NEWER
-			public DetailScatterMode scatterMode = DetailScatterMode.InstanceCountMode;
-			#endif
-
 			//public CoordRect rect; //storing both offset and size (in case the layers length is 0)
 
 
@@ -163,14 +152,10 @@ namespace MapMagic.Nodes.MatrixGenerators
 			{
 				if (terrain==null || terrain.Equals(null) || terrain.terrainData==null) return; //chunk removed during apply
 
-				#if UNITY_2022_2_OR_NEWER
-				terrain.terrainData.SetDetailScatterMode(scatterMode);
-				#endif
-
 				int resolution = detailLayers[0].GetLength(1);
 				terrain.terrainData.SetDetailResolution(resolution, patchResolution);
-
-				terrain.terrainData.detailPrototypes = detailPrototypes; //this was after SetDetalLayer. Check if work with clusters
+				
+				terrain.terrainData.detailPrototypes = detailPrototypes;
 
 				for (int i=0; i<detailLayers.Length; i++)
 					terrain.terrainData.SetDetailLayer(0, 0, i, detailLayers[i]);

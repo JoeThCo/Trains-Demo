@@ -9,8 +9,9 @@ using MapMagic.Products;
 
 namespace MapMagic.Nodes
 {
+
 	[System.Serializable]
-	public class Auxiliary
+	public class Group
 	{ 
 		public string name = "Group";
 		public string comment = "Drag in generators to group them";
@@ -18,22 +19,5 @@ namespace MapMagic.Nodes
 
 		public Vector2 guiPos;
 		public Vector2 guiSize = new Vector2(100,100);
-	}
-
-
-	[System.Serializable]
-	public class Group : Auxiliary
-	{ 
-		
-	}
-
-	[System.Serializable]
-	public class Comment : Auxiliary
-	{ 
-		public Comment ()
-		{
-			name = "Comment";
-			color = new Color(255f/256f, 182f/256f, 72f/256f, 1); //Amber
-		}
 	}
 }

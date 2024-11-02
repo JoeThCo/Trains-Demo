@@ -21,16 +21,16 @@ namespace MapMagic.Nodes
 	{
 		[NonSerialized] public Generator[] generators = new Generator[0];  //it's all serialized via callback
 		[NonSerialized] public Dictionary<IInlet<object>, IOutlet<object>> links = new Dictionary<IInlet<object>, IOutlet<object>>();
-		[NonSerialized] public Auxiliary[] groups = new Auxiliary[0]; //Auxiliary is group and comment. Name 'groups' for compatibility
+		[NonSerialized] public Group[] groups = new Group[0];
 		[NonSerialized] public Noise random = new Noise(12345, 32768); //noise created on serialization as well, nb when changing noise arr length
 
 		[NonSerialized] public Exposed exposed = new Exposed();
 		[NonSerialized] public Override defaults = new Override();
 
-		public int serializedVersion = 0; //mapmagic version graph was last serialized to update it
-//		public int instanceId; //cached instanceId during serialization
+		public ulong changeVersion; //increases each time after change from gui. Used to copy function userGraph only when changed.
+		public int serializedVersion = 0; //displayed in graph inspector
+		public int instanceId; //cached instanceId during serialization
 
-		public static Action<Graph, TileData> OnBeforeClearPrepareGenerate; //called on any significant generate-related action
 		public static Action<Generator, TileData> OnBeforeNodeCleared;
 		public static Action<Generator, TileData> OnAfterNodeGenerated;
 		public static Action<Type, TileData, IApplyData, StopToken> OnOutputFinalized; //TODO: rename onAfterFinalize? onBeforeApplyAssign?
@@ -42,17 +42,14 @@ namespace MapMagic.Nodes
 		public Vector2 guiMiniPos = new Vector2(20,20);
 		public Vector2 guiMiniAnchor = new Vector2(0,0);
 
-		#if MM_DEBUG
-		public string debugName;
 		public bool debugGenerate = true;
 		public bool debugGenInfo = false;
 		public bool debugGraphBackground = true;
 		public float debugGraphBackColor = 0.5f;
 		public bool debugGraphFps = true;
 		public bool drawInSceneView = false;
-		#endif
 
-//		public void OnEnable () => instanceId=GetInstanceID(); //GetInstanceID not allowed during serialization
+		public void OnEnable () => instanceId=GetInstanceID(); //GetInstanceID not allowed during serialization
 
 		public static Graph Create (Graph src=null, bool inThread=false)
 		{
@@ -85,16 +82,6 @@ namespace MapMagic.Nodes
 				//gen.id = NewGenId; //id is assigned on create
 
 				ArrayTools.Add(ref generators, gen);
-				//cachedGuidLut = null;
-			}
-
-
-			public void Add (Auxiliary grp)
-			{
-				if (ArrayTools.Contains(groups, grp))
-						throw new Exception("Could not add group " + grp + " since it is already in graph");
-
-				ArrayTools.Add(ref groups, grp);
 				//cachedGuidLut = null;
 			}
 
@@ -318,7 +305,7 @@ namespace MapMagic.Nodes
 					else links.Add(inlet, outlet);
 				}
 
-				inlet.Gen.version++;
+				//cachedBackwardLinks = null;
 			}
 
 
@@ -396,7 +383,7 @@ namespace MapMagic.Nodes
 				if (links.ContainsKey(inlet))
 					links.Remove(inlet);
 				
-				inlet.Gen.version++;
+				//cachedBackwardLinks = null;
 			}
 
 
@@ -406,10 +393,9 @@ namespace MapMagic.Nodes
 				List<IInlet<object>> linkedInlets = new List<IInlet<object>>();
 
 				foreach (IInlet<object> inlet in linkedInlets)
-				{
 					links.Remove(inlet);
-					inlet.Gen.version++;
-				}
+
+				//cachedBackwardLinks = null;
 			}
 
 
@@ -425,23 +411,17 @@ namespace MapMagic.Nodes
 
 					//unlinking this from others (not needed on remove, but Unlink could be called not only on remove)
 					if (inlet.Gen == gen)
-					{
 						genLinks.Add(inlet);
-						outlet.Gen.version++;
-					}
 
 					//unlinking others from this
 					if (outlet.Gen == gen)
-					{
 						genLinks.Add(inlet);
-						inlet.Gen.version++;
-					}
 				}
 
 				foreach (IInlet<object> inlet in genLinks)
 					links.Remove(inlet);
 
-				gen.version++;
+				//cachedBackwardLinks = null;
 			}
 
 
@@ -553,16 +533,6 @@ namespace MapMagic.Nodes
 				else return null;
 			}
 
-			public Generator GetGeneratorById (ulong id)
-			/// Finds first generator with given id
-			{
-				for (int g=0; g<generators.Length; g++)
-				{
-					if (generators[g].id == id)
-						return generators[g];
-				}
-				return null;
-			}
 
 			public IEnumerable<T> GeneratorsOfType<T> ()
 			/// Iterates all generators of given type
@@ -651,36 +621,6 @@ namespace MapMagic.Nodes
 			}
 
 
-			public ulong IdsVersions ()
-			/// Practically unique identifier that describes this graph and it's current state.
-			/// Used to update functions and clusters only when graph changed
-			/// Summary of all generator ids + versions + seed. 
-			{
-				ulong ids = 0;
-				ulong versions = 0;
-				foreach (Generator gen in generators)
-				{
-					ids += gen.id;
-					versions += gen.version;
-
-					if (gen is IMultiLayer multGen)
-						foreach (IUnit layer in multGen.Layers)
-							ids += layer.Id;
-				}
-
-				//return (ulong)(random.Seed<<24) + ids + versions;
-				return (ulong)(ids<<16) + versions;
-			}
-
-
-			public string IdsVersionsHash ()
-			{
-				ulong idsVers = IdsVersions();
-				int hashCode = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(idsVers);
-				return Convert.ToBase64String( BitConverter.GetBytes(idsVers) );
-			}
-
-
 			public IEnumerable<Graph> SubGraphs (bool recursively=false)
 			/// Enumerates in all child graphs recursively
 			{
@@ -753,18 +693,37 @@ namespace MapMagic.Nodes
 
 		#region Generate
 
-			//And all the stuff that takes data into account
+		//And all the stuff that takes data into account
 
-			public bool ClearChanged (TileData data, bool totalRebuild=false)
+			public void ClearGenerator (Generator gen, TileData data)
+			/// Clears this generator only
+			/// Sets gen to non-ready (in any sub-data) and then removes ready state for all dependent from it
+			/// Called from MM UI on top level only, but each biome runs this for subgraph recursively
+			{
+				#if MM_DEBUG
+				Log.Add("ClearGenerator (draft:" + data.isDraft + " gen:" + gen.id); 
+				#endif
+
+				data.ClearReady(gen); 
+				//no need to check if it is contained in graph, just removing ready state from data
+				//maybe move to ClearDirectly?
+
+				if (gen is ICustomClear cgen  &&  ContainsGenerator(gen))
+					cgen.ClearDirectly(data);
+
+				foreach (ICustomClear acGen in GeneratorsOfType<ICustomClear>())
+					acGen.ClearAny(gen, data);
+			}
+
+
+			public bool ClearChanged (TileData data)
 			/// Removes ready state if any of prev gens is not ready
 			/// Clears all relevants if prior generator is clear
 			{
-				OnBeforeClearPrepareGenerate?.Invoke(this, data);
-
 				RefreshInputHashIds();
 
 				//clearing nodes that are not in graph
-				data.ClearStray(this);
+				data.RemoveNotContained(this);
 
 				Dictionary<Generator,bool> processed = new Dictionary<Generator,bool>();
 				//using processed instead of ready since non-ready generators should be cleared too - they might have NonReady-ReadyOutdated-NonReady chanis
@@ -772,15 +731,14 @@ namespace MapMagic.Nodes
 				//clearing graph nodes
 				bool allReady = true;
 				foreach (Generator relGen in RelevantGenerators(data.isDraft))
-					allReady = allReady & ClearChangedRecursive(relGen, data, processed, totalRebuild);
+					allReady = allReady & ClearChangedRecursive(relGen, data, processed);
 				
 				return allReady;
 			}
 
 
-			private bool ClearChangedRecursive (Generator gen, TileData data, Dictionary<Generator,bool> processed, bool totalRebuild=false)
+			private bool ClearChangedRecursive (Generator gen, TileData data, Dictionary<Generator,bool> processed)
 			/// Removes ready state if any of prev gens is not ready, per-gen
-			/// Will iterate at least once all the nodes, even if they were not changed
 			{
 				if (processed.TryGetValue(gen, out bool processedReady))
 					return processedReady;
@@ -796,7 +754,7 @@ namespace MapMagic.Nodes
 
 						bool inletReady; //loading from lut or clearing recursive
 						if (!processed.TryGetValue(gen, out inletReady))
-							inletReady = ClearChangedRecursive(precedingGen, data, processed, totalRebuild);
+							inletReady = ClearChangedRecursive(precedingGen, data, processed);
 
 						ready = ready && inletReady;
 					}
@@ -812,7 +770,7 @@ namespace MapMagic.Nodes
 
 							bool inletReady; //loading from lut or clearing recursive
 							if (!processed.TryGetValue(gen, out inletReady))
-								inletReady = ClearChangedRecursive(precedingGen, data, processed, totalRebuild);
+								inletReady = ClearChangedRecursive(precedingGen, data, processed);
 
 							ready = ready && inletReady;
 							//no break, need to check-clear other layers chains
@@ -822,20 +780,19 @@ namespace MapMagic.Nodes
 				if (gen is ICustomDependence customDepGen)
 					foreach (Generator priorGen in customDepGen.PriorGens())
 					{
-						ClearChangedRecursive(priorGen, data, processed, totalRebuild);
+						ClearChangedRecursive(priorGen, data, processed);
 
-						if (!data.IsReady(priorGen))
-							{ ready = false; break; }  //was ready=true. Mistake?
+						if (!data.IsReady(priorGen.id))
+							{ ready = true; break; }
 					}
 
 				if (gen is ICustomClear cgen)
 				{
-					cgen.OnClearing(this, data, ref ready, totalRebuild);
-					//cgen.ClearRecursive(data);
-					//ready = data.IsReady(gen);
-				}	
-				
-				if (!ready) data.ClearReady(gen); 
+					cgen.ClearRecursive(data);
+					ready = data.IsReady(gen);
+				}		
+
+				if (!ready) data.ClearReady(gen);  //maybe move to ClearRecursive?
 				processed.Add(gen, ready);
 				return ready;
 			}
@@ -845,15 +802,13 @@ namespace MapMagic.Nodes
 			/// Executed in main thread to perform terrain reads or something
 			/// Not recursive just for performance reasons. Prepares only on-ready generators
 			{
-				OnBeforeClearPrepareGenerate?.Invoke(this, data);
-
 				if (ovd==null)
 					ovd = defaults;
 
 				foreach (Generator gen in generators)
 				{
 					if (!(gen is IPrepare prepGen)) continue;
-					if (data.IsReady(gen)) continue;
+					if (data.IsReady(gen.id)) continue;
 
 					//applying override (duplicating gen if needed)
 					Generator cGen = gen;
@@ -896,11 +851,8 @@ namespace MapMagic.Nodes
 
 			public void Generate (TileData data, StopToken stop=null, Override ovd=null)
 			{
-				OnBeforeClearPrepareGenerate?.Invoke(this, data);
-
 				#if MM_DEBUG
-				string cs = data.area != null ? data.area.Coord.ToString() : "null";
-				Log.AddThreaded("Graph.Generate Started", idName:(data.area.Coord.x + "," + data.area.Coord.z + (data.isDraft?" draft":"main")), ("name:",debugName), ("ver:", IdsVersionsHash()), ("draft:",data.isDraft), ("stop:",stop.stop));
+				Log.Add("Generate (draft:" + data.isDraft + ")", $"{data.area.Coord.x}, {data.area.Coord.z}");
 				#endif
 
 				//refreshing link ids lut (only for top level graph)
@@ -916,33 +868,16 @@ namespace MapMagic.Nodes
 				//main generate pass - all changed gens recursively
 				foreach (Generator relGen in RelevantGenerators(data.isDraft))
 				{
-					if (stop!=null && stop.stop) 
-					{
-						#if MM_DEBUG
-						Log.AddThreaded("Graph.Generate StopExit", ("coord:",cs), ("name:",debugName), ("ver:", IdsVersionsHash()), ("draft:",data.isDraft), ("stop:",stop.stop));
-						#endif
-
-						return;
-					}
-
+					if (stop!=null && stop.stop) return;
 					GenerateRecursive(relGen, data, ovd,  stop:stop); //will not generate if it has not changed
 				}
-
-				#if MM_DEBUG
-				Log.AddThreaded("Graph.Generate Complete", ("coord:",cs), ("name:",debugName), ("ver:", IdsVersionsHash()), ("draft:",data.isDraft), ("stop:",stop.stop));
-				#endif
 			}
 
 
 			public void GenerateRecursive (Generator gen, TileData data, Override ovd, StopToken stop=null)
 			{
-				#if MM_DEBUG
-				Log.AddThreaded("Graph.GenerateRecursive Started", ("coord:",data.area.Coord), ("node:",gen.GetType().Name), ("ready:",data.IsReady(gen)), ("stop:",stop.stop), ("ver:", IdsVersionsHash()));
-				#endif
-
 				if (stop!=null && stop.stop) return;
-				if (data.IsReady(gen)) return;
-				ulong startedVersion = gen.version;
+				if (data.IsReady(gen.id)) return;
 
 				//generating inlets recursively
 				if (gen is IInlet<object> inletGen)
@@ -966,7 +901,7 @@ namespace MapMagic.Nodes
 
 				//checking for generating twice
 				if (stop!=null && stop.stop) return;
-				if (data.IsReady(gen))  
+				if (data.IsReady(gen.id))  
 					throw new Exception($"Generating twice {gen}, id: {Id.ToString(gen.id)}, draft: {data.isDraft}, stop: {(stop!=null ? stop.stop.ToString() : "null")}");
 
 				//before-generated event
@@ -991,45 +926,27 @@ namespace MapMagic.Nodes
 					cGen = (Generator)Assigner.CopyAndAssign(gen, exposed, ovd);
 
 				//generating
+				#if MM_DEBUG
+				//Log.Add($"Generating {cGen.GetType().Name} (draft:{data.isDraft})"); //too many nodes to show
+				#endif
+
 				cGen.Generate(data, stop);
 
-				//debug data
-				#if MM_DEBUG
+				//checking time
 				long deltaTime = System.Diagnostics.Stopwatch.GetTimestamp() - startTime;
 				if (data.isDraft) gen.draftTime = 1000.0 * deltaTime / System.Diagnostics.Stopwatch.Frequency;
 				else gen.mainTime = 1000.0 * deltaTime / System.Diagnostics.Stopwatch.Frequency;
-				#endif
 
-				//marking ready 
+				//marking ready
 				if (stop!=null && stop.stop) return;
-				//if (gen.version==startedVersion || data.isDraft)
-				//if it's still relevant (or draft - drafts allowed to be partly wrong) - theoretically it should be so, but MM worked all the way without it
 				data.MarkReady(gen);
-
-				#if MM_DEBUG
-				Log.AddThreaded("Graph.GenerateRecursive Complete", ("coord:",data.area.Coord), ("node:",gen.GetType().Name), ("ready:",data.IsReady(gen)), ("stop:",stop.stop), ("ver:", IdsVersionsHash()));
-				#endif
-
 				OnAfterNodeGenerated?.Invoke(gen, data);
 			}
 
 
 			public void Finalize (TileData data, StopToken stop=null)
 			{
-				#if MM_DEBUG
-				Log.AddThreaded("Graph.Finalize Starting", ("coord:",data.area.Coord), ("stop:",stop.stop), ("ver:", IdsVersionsHash()));
-				#endif
-
-				if (stop!=null && stop.stop) 
-				{ 
-					data.ClearFinalize(); //no need to leave finalize for further generate
-
-					#if MM_DEBUG
-					Log.AddThreaded("Graph.Finalize Exit", ("coord:",data.area.Coord), ("stop:",stop.stop), ("ver:", IdsVersionsHash()), ("val:",data.heights.arr[100]));
-					#endif
-
-					return; 
-				} 
+				if (stop!=null && stop.stop) { data.ClearFinalize(); return; } //no need to leave finalize for further generate
 				
 				while (data.FinalizeMarksCount > 0)
 				{
@@ -1043,23 +960,9 @@ namespace MapMagic.Nodes
 					//}
 					//can't use ObjectsGenerators since they are in the other module. Using OnOutputFinalized event instead.
 
-					if (stop!=null && stop.stop) 
-					{ 
-						data.ClearFinalize(); 
-
-						#if MM_DEBUG
-						Log.AddThreaded("Graph.Finalize Stopped", ("coord:",data.area.Coord), ("stop:",stop.stop), ("ver:", IdsVersionsHash()), ("val:",data.heights.arr[100]));
-						#endif
-
-						return; 
-					}
+					if (stop!=null && stop.stop) { data.ClearFinalize(); return; }
 					action(data, stop);
 				}
-
-				#if MM_DEBUG
-				if (data.heights != null)
-					Log.AddThreaded("Graph.Finalize Complete", ("coord:",data.area.Coord), ("stop:",stop.stop), ("ver:", IdsVersionsHash()), ("val:",data.heights.arr[100]));
-				#endif
 			}
 
 
@@ -1137,10 +1040,10 @@ namespace MapMagic.Nodes
 			}
 
 
-			public static IEnumerable<(Graph,TileData)> AllGraphsDatas (Graph rootGraph, TileData rootData, bool includeSelf=false)
+			public static IEnumerable<(Graph,TileData)> SubGraphsDatas (Graph rootGraph, TileData rootData)
+			/// Includes root level graph-data as well
 			{
-				if (includeSelf)
-					yield return (rootGraph, rootData);
+				yield return (rootGraph, rootData);
 
 				foreach (IBiome biome in rootGraph.UnitsOfType<IBiome>()) //top level first
 				{
@@ -1148,11 +1051,11 @@ namespace MapMagic.Nodes
 					if (subGraph == null)
 						continue;
 
-					TileData subData = biome.SubData(rootData);
+					TileData subData = rootData.GetSubData(biome.Id);
 					if (subData == null)
 						continue;
 
-					foreach ((Graph,TileData) subSub in AllGraphsDatas(subGraph, subData))
+					foreach ((Graph,TileData) subSub in SubGraphsDatas(subGraph, subData))
 						yield return subSub;
 				}
 			}
@@ -1194,7 +1097,7 @@ namespace MapMagic.Nodes
 
 					else
 					{
-						if (data.IsReady(generators[g]))
+						if (data.IsReady(generators[g].id))
 							complete ++;
 					}
 				}

@@ -18,7 +18,13 @@ namespace MapMagic.Core
 	public interface IMapMagic
 	{
 		Graph Graph {get;}
-		void Refresh (bool clearAll);
+		void Refresh ();
+		void Refresh (Generator gen1);
+		void Refresh (Generator gen1, Generator gen2);
+		void Refresh (bool main, bool draft);
+		void Clear (Generator gen);
+		void ClearAll ();
+		void StartGenerate (bool main=true, bool draft=true);
 		float GetProgress ();
 		bool IsGenerating ();
 		bool ContainsGraph (Graph graph);
@@ -31,7 +37,7 @@ namespace MapMagic.Core
 	[DisallowMultipleComponent]
 	public class MapMagicObject : MonoBehaviour, IMapMagic, ISerializationCallbackReceiver
 	{
-		public static readonly SemVer version = new SemVer(2,1,16); 
+		public static readonly SemVer version = new SemVer(2,1,11); 
 
 		//graph
 		public Graph graph;
@@ -63,7 +69,6 @@ namespace MapMagic.Core
 		public bool hideFarTerrains = true;
 		public int mainRange = 1;
 		public int DraftRange => tiles.generateRange;
-		public bool clearOnNodeRemove = true;
 
 		//terrain settings
 		public TerrainSettings terrainSettings = new TerrainSettings();  //pixel error, shadows, trees, grass, etc.
@@ -137,8 +142,6 @@ namespace MapMagic.Core
 
 		public void Update () 
 		{ 
-			Debug.developerConsoleVisible = true;
-
 			tiles.Update((Vector3)tileSize, pinned:tiles.pinned, holder:this, distsOnly:!isPlaying); //distsOnly: only updating distance priority in editor
 			
 			Den.Tools.Tasks.CoroutineManager.Update();
@@ -156,7 +159,10 @@ namespace MapMagic.Core
 			foreach (TerrainTile tile in tiles.Tiles())
 				tile.Resize();
 			
-			Refresh(clearAll:true);
+			ClearAll();
+
+			if (instantGenerate)
+				StartGenerate();
 		}
 
 
@@ -214,28 +220,39 @@ namespace MapMagic.Core
 
 		#region IMapMagic
 
-		
-			public void Refresh (bool clearAll=false) 
-			/// Makes current mapMagic to generate changed
-			/// If clearAll then clears all and generates from scratch
+			public void Refresh () 
+			/// Makes current mapMagic to re-generate all
+			{
+				if (graph == null) return;
+				graph.changeVersion++;
+
+				ClearAll();
+
+				if (instantGenerate)
+					StartGenerate();
+			}
+
+			public void Refresh (Generator gen) => Refresh(gen, null);
+			public void Refresh (Generator gen1, Generator gen2)
+			/// Makes MM to reset only selected generators and generate
+			/// This will not check if these generators are really contained in graph, so check it beforehand. Not a big deal though mm will generate 
+			{
+				if (graph == null) return;
+
+				if (gen1!=null) Clear(gen1);
+				if (gen2!=null) Clear(gen2);
+
+				if (instantGenerate)
+					StartGenerate();
+			}
+
+			public void Refresh (bool main, bool draft) 
+			/// Makes current mapMagic to re-generate drafts or mains only
 			{
 				if (graph == null) return;
 
 				if (instantGenerate)
-					foreach (TerrainTile tile in tiles.All())
-						tile.Refresh(graph, clearAll);
-
-				else
-				{
-					StopGenerate();
-					ClearChanged(clearAll);	
-				}
-			}
-
-			private void ClearChanged (bool clearAll=false)
-			{
-				foreach (TerrainTile tile in tiles.All())
-					tile.ClearChanged(graph, clearAll);
+					StartGenerate(main, draft);
 			}
 
 			public bool ContainsGraph (Graph graph)
@@ -245,6 +262,35 @@ namespace MapMagic.Core
 				if (this.graph.generators == null) return false; //avoiding breaking all if something went wrong on loading
 				if (this.graph == graph  ||  this.graph.ContainsSubGraph(graph, recursively:true)) return true;
 				return false;
+			}
+
+			public void Clear (Generator gen)
+			{
+				//clearing datas (no matter if this node is used or not)
+				foreach (TerrainTile tile in tiles.All())
+				{
+					if (tile.main?.data!=null) 
+					{
+						graph.ClearGenerator(gen, tile.main.data);
+						graph.ClearChanged(tile.main.data);
+					}
+					if (tile.draft?.data!=null) 
+					{
+						graph.ClearGenerator(gen, tile.draft.data);
+						graph.ClearChanged(tile.draft.data);
+					}
+				}
+			}
+
+			public void ClearAll ()
+			{
+				foreach (TerrainTile tile in tiles.All())
+				{
+					tile.StopGenerate(); //this will reset tile tasks
+
+					tile.main?.data?.Clear(inSubs:true);
+					tile.draft?.data?.Clear(inSubs:true); 
+				}
 			}
 
 			[Obsolete] public void Purge (OutputGenerator outGen, bool main=true, bool draft=true)
@@ -258,11 +304,54 @@ namespace MapMagic.Core
 
 			public void ResetTerrains ()
 			{
-				if (clearOnNodeRemove)
-					foreach (TerrainTile tile in tiles.Tiles())
-						tile.ResetTerrain();
+				foreach (TerrainTile tile in tiles.Tiles())
+					tile.ResetTerrain();
 			}
 
+			public void GenerateTerrain (TerrainTile tile)
+			/// Used by: Tile.OnChange
+			{
+				if (instantGenerate)
+					tile.StartGenerate(graph);
+			}
+
+			public void StartGenerate (bool main=true, bool draft=true)
+			/// Start generating all tiles (if the specified lod is enabled)
+			{
+				if (graph == null)
+					throw new Exception("MapMagic: Graph data is not assigned");
+
+				if (draft || main)
+					foreach (TerrainTile tile in tiles.All())
+						tile.StartGenerate(graph, main, draft);  //enqueue all of chunks before starting generate
+			}
+
+
+			public void StartGenerate (TerrainTile tile, bool generateMain=true, bool generateLod=true)
+			/// Used by: Tile.OnChange
+			{
+				if (instantGenerate)
+					tile.StartGenerate(graph, generateMain:generateMain, generateLod:generateLod);
+			}
+
+
+			public void StartGenerateNonReady ()
+			/// Start generating all tiles if they are not already generated
+			{
+				if (graph == null)
+					throw new Exception("MapMagic: Graph data is not assigned");
+
+				foreach (TerrainTile tile in tiles.All())
+					if (!tile.Ready)
+						tile.StartGenerate(graph);
+			}
+
+			public void StopGenerate ()
+			{
+				if (graph != null)
+					foreach (TerrainTile tile in tiles.All())
+						tile.StopGenerate();
+			}
 
 			public void SwitchLods ()
 			{
@@ -317,54 +406,12 @@ namespace MapMagic.Core
 
 			}
 
-        #endregion
-
-        #region Start/Stop Generate
-
-			public void StartGenerate (bool main=true, bool draft=true)
-			/// Start generating all tiles (if the specified lod is enabled)
-			{
-				if (graph == null)
-					throw new Exception("MapMagic: Graph data is not assigned");
-
-				if (draft || main)
-					foreach (TerrainTile tile in tiles.All())
-						tile.StartGenerate(graph, main, draft);  //enqueue all of chunks before starting generate
-			}
+		#endregion
 
 
-			public void StartGenerate (TerrainTile tile, bool generateMain=true, bool generateLod=true)
-			/// Used by: Tile.OnChange
-			{
-				if (instantGenerate)
-					tile.StartGenerate(graph, generateMain:generateMain, generateLod:generateLod);
-			}
-
-
-			private void StartGenerateNonReady ()
-			/// Start generating all tiles if they are not already generated
-			{
-				if (graph == null)
-					throw new Exception("MapMagic: Graph data is not assigned");
-
-				foreach (TerrainTile tile in tiles.All())
-					if (!tile.Ready)
-						tile.StartGenerate(graph);
-			}
-
-			private void StopGenerate ()
-			{
-				if (graph != null)
-					foreach (TerrainTile tile in tiles.All())
-						tile.Stop();
-			}
-
-        #endregion
-
-
-        #region Serialization
-
-        public bool serializedMultithreading = true;
+		#region Serialization
+			
+			public bool serializedMultithreading = true;
 			public int serializedMaxThreads = 3; 
 			public bool serializedAutoMaxThreads = true;
 			public float serializedMaxApplyTime = 10;
@@ -405,12 +452,7 @@ namespace MapMagic.Core
 		public Nodes.MatrixGenerators.HeightOutput200.ApplyType heightDraftApply = Nodes.MatrixGenerators.HeightOutput200.ApplyType.SetHeights;
 		public int grassResDownscale = 1;
 		public int grassResPerPatch = 16;
-		#if UNITY_2022_1_OR_NEWER
-		public DetailScatterMode grassScatterMode = DetailScatterMode.InstanceCountMode;
-		#endif
-
 		public int objectsNumPerFrame = 500;
-		public int holesRes = 64;
 
 		//public Material microSplatMaterial; //using terrain mat instead
 
@@ -422,7 +464,6 @@ namespace MapMagic.Core
 		public MicroSplatApplyType microSplatApplyType = MicroSplatApplyType.Textures;
 		public bool useCustomControlTextures = false;
 		public bool microSplatNormals = false;
-		public UnityEngine.Object microSplatTexArrConfig;
 		public UnityEngine.Object megaSplatTexList;
 		public UnityEngine.Object vegetationPackage;
 		public bool assignComponent; //assign ms/ms/cts component to terrain

@@ -109,11 +109,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 		drawButtons = false,
 		colorType = typeof(MatrixWorld), 
 		iconName="GeneratorIcons/TexturesOut",
-		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Textures")]
+		helpLink = "https://gitlab.com/denispahunov/mapmagic/wikis/output_generators/Textures")]
 	public class TexturesOutput200 : BaseTexturesOutput<TexturesOutput200.TextureLayer>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public class TextureLayer : BaseTextureLayer
 		{
 			[Val("Layer", cat:"Layer")] public TerrainLayer prototype; // = new TerrainLayer() {  tileSize=new Vector2(20,20) };
@@ -130,7 +128,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 		public override void Generate (TileData data, StopToken stop) 
 		{
-			Log.AddThreaded("Textures");
+			Log.Add("Textures");
 
 			//generating
 			MatrixWorld[] dstMatrices = BaseGenerate(data, stop);
@@ -170,7 +168,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			data.MarkApply(applyData);
 
 			#if MM_DEBUG
-			Log.AddThreaded("TexturesOut Finalized");
+			Log.Add("TexturesOut Finalized");
 			#endif
 		}
 
@@ -253,7 +251,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				Profiler.EndSample();
 
 				#if MM_DEBUG
-				Log.AddThreaded("TexturesOut Applied");
+				Log.Add("TexturesOut Applied");
 				#endif
 			}
 
@@ -288,11 +286,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 		drawButtons = false,
 		colorType = typeof(MatrixWorld), 
 		iconName="GeneratorIcons/TexturesOut",
-		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Textures")]
+		helpLink = "https://gitlab.com/denispahunov/mapmagic/wikis/output_generators/Textures")]
 	public class CustomShaderOutput200 : BaseTexturesOutput<CustomShaderOutput200.CustomShaderLayer>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public class CustomShaderLayer : BaseTextureLayer { } //inheriting empty class just to draw it's editor
 
 		public static string[] controlTextureNames = new string[] { "_ControlTexture1" };
@@ -571,11 +567,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 		drawButtons = false,
 		colorType = typeof(MatrixWorld), 
 		iconName="GeneratorIcons/TexturesOut",
-		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Textures")]
+		helpLink = "https://gitlab.com/denispahunov/mapmagic/wikis/output_generators/Textures")]
 	public class DirectTexturesOutput200 : BaseTexturesOutput<DirectTexturesOutput200.DirectTexturesLayer>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public class DirectTexturesLayer : BaseTextureLayer { } //inheriting empty class just to draw it's editor
 
 		public override bool HideFirst => false;
@@ -754,11 +748,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 		drawButtons = false,
 		colorType = typeof(MatrixWorld), 
 		iconName="GeneratorIcons/TexturesOut",
-		helpLink = "https://gitlab.com/denispahunov/mapmagic/-/wikis/MatrixGenerators/Textures")]
+		helpLink = "https://gitlab.com/denispahunov/mapmagic/wikis/output_generators/Textures")]
 	public class DirectMatricesOutput200 : BaseTexturesOutput<DirectMatricesOutput200.DirectMatricesLayer>
 	{
-		public override (string, int) GetCodeFileLine () => GetCodeFileLineBase();  //to get here with right-click on generator
-
 		public class DirectMatricesLayer : BaseTextureLayer { } //inheriting empty class just to draw it's editor
 
 		public override bool HideFirst => false;

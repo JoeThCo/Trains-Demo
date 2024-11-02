@@ -4,12 +4,11 @@
 	{
 		_Color("Color", Color) = (1,1,1,1)
 		_BackColor("Background Color", Color) = (0,0,0,1)
+		_Heightmap("Heightmap", 2D) = "black" {}
 		_Size("Size", Float) = 5
 		_Flip("Flip", Float) = 0
 		_ClipRect("ClipRect", Vector) = (0,0,0,0)
 		_Offset("Offset", Float) = 0.02
-		_Heightmap("Heightmap", 2D) = "black" {}
-		_HeightmapMargins("Heightmap Margins", Int) = 16 
 	}
 
 	SubShader
@@ -50,8 +49,6 @@
 
 			sampler2D _Heightmap;
 			float4 _Heightmap_ST;
-			float4 _Heightmap_TexelSize;
-			int _HeightmapMargins;
 			fixed4 _Color;
 			fixed4 _BackColor;
 			float _Size;
@@ -76,17 +73,9 @@
 			{
 				v2f OUT;
 
-				//applying heightmap (uv block from TerrainPreview.shader)
-				float2 uv = v.vertex.xz;
-				float2 pxTexSize = _Heightmap_TexelSize.zw - _HeightmapMargins * 2 - 1; //texture size without margins. Don't actually know why -1, related with 513
-				float2 ratio = pxTexSize / _Heightmap_TexelSize.zw;
-				float2 uvMargins = (1-ratio) / 2;
-				uv *= ratio;
-				uv += uvMargins;
-
-				float height = tex2Dlod(_Heightmap, float4(uv,0,0)).r;
+				//applying heightmap
+				float height = tex2Dlod(_Heightmap, float4(v.vertex.xz,0,0)).r;
 				v.vertex.y += height;
-
 
 				OUT.vertex = UnityObjectToClipPos(v.vertex);
 

@@ -81,17 +81,6 @@ namespace Den.Tools
 				return new Coord (x,z);
 			}
 
-			public static Coord PickCellByPos (float fx, float fz, Vector2D cellSize)
-			{
-				int x = (int)(fx/cellSize.x);
-				if (fx<0) x--;
-
-				int z = (int)(fz/cellSize.z);
-				if (fz<0) z--;
-				
-				return new Coord (x,z);
-			}
-
 			public static Coord PickCellByPos (Vector3 v, float cellSize=1) { return PickCellByPos(v.x, v.z, cellSize); }
 
 
@@ -374,7 +363,7 @@ namespace Den.Tools
 
 	[System.Serializable]
 	[StructLayout (LayoutKind.Sequential)] //to pass to native
-	public struct CoordRect : IEnumerable<Coord>
+	public struct CoordRect
 	{
 		public Coord offset;
 		public Coord size;
@@ -432,23 +421,6 @@ namespace Den.Tools
 		public static explicit operator Vector4(CoordRect cr) => new Vector4(cr.offset.x, cr.offset.z, cr.size.x, cr.size.z);
 		public static explicit operator CoordRect(Rect r) => new CoordRect((int)r.x, (int)r.y, (int)r.width, (int)r.height);
 		public static explicit operator Rect(CoordRect cr) => new Rect(cr.offset.x, cr.offset.z, cr.size.x, cr.size.z);
-
-		public IEnumerator<Coord> GetEnumerator()
-		{
-			Coord min = offset;
-			Coord max = offset+size;
-			for (int x = min.x; x < max.x; x++)
-				for (int z = min.z; z < max.z; z++)
-					yield return new Coord(x,z);
-		}
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			Coord min = offset;
-			Coord max = offset+size;
-			for (int x = min.x; x < max.x; x++)
-				for (int z = min.z; z < max.z; z++)
-					yield return new Coord(x,z);
-		}
 
 		public void Expand (int v) { offset.x-=v; offset.z-=v; size.x+=v*2; size.z+=v*2; }
 		public CoordRect Expanded (int v) { return new CoordRect(offset.x-v, offset.z-v, size.x+v*2, size.z+v*2); }

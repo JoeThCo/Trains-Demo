@@ -73,19 +73,11 @@ namespace MapMagic.Nodes.GUI
 			foreach (Generator sgen in selected)
 			{
 				sgen.enabled = !sgen.enabled;
-				if (sgen.enabled) sgen.version++;
+				GraphWindow.current?.RefreshMapMagic(sgen);
 			}
 
-			GraphWindow.current?.RefreshMapMagic();
 			GraphWindow.current.Focus();
 			GraphWindow.current.Repaint();
-		}
-
-		public static void RemoveLink(this Graph graph, IInlet<object> inlet)
-		{
-			HashSet<Generator> inletGens = new HashSet<Generator>();
-			inletGens.Add(inlet.Gen);
-			CheckAndClearApplied(inletGens);
 		}
 
 
@@ -99,10 +91,13 @@ namespace MapMagic.Nodes.GUI
 
 			if (hasOutput  &&  
 				GraphWindow.current.mapMagic != null  &&
-				GraphWindow.current.mapMagic is MapMagicObject mapMagicObject)
-				//EditorUtility.DisplayDialog("Clear Applied", "Would you like to clear generated and applied results on terrain as well?", "Clear", "Keep")
+				GraphWindow.current.mapMagic is MapMagicObject mapMagicObject  &&
+				EditorUtility.DisplayDialog("Clear Applied", "Would you like to clear generated and applied results on terrain as well?", "Clear", "Keep"))
 			{
 				mapMagicObject.ResetTerrains();
+				//foreach (Generator gen in gens)
+				//	if (gen is OutputGenerator outGen)
+				//		GraphWindow.current.mapMagic.Purge(outGen);
 			}
 		}
 
