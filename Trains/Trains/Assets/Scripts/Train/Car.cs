@@ -13,7 +13,6 @@ public class Car : MonoBehaviour
     private Spline CurrentSpline { get; set; }
     public Vector3 WantedPosition { get; private set; }
     public Quaternion WantedRotation { get; private set; }
-
     public AttachToCar AttachToCar { get; private set; }
     public Train Train { get; private set; }
     public int Index { get; private set; }
