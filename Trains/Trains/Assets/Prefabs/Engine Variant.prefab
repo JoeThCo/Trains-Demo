@@ -100,6 +100,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 386586028655942804, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
+      propertyPath: car
+      value: 
+      objectReference: {fileID: 7004931915689115016}
     - target: {fileID: 3282430684104706679, guid: d11bb067b32dda240a32eb46a5435216, type: 3}
       propertyPath: m_Name
       value: Engine Variant

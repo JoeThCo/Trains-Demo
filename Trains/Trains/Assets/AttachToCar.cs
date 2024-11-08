@@ -35,7 +35,7 @@ public class AttachToCar : MonoBehaviour
         if (player != null)
         {
             player.transform.SetParent(null, true);
-            player = null;
+            playerController = null;
         }
     }
 }
