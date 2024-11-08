@@ -219,6 +219,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5da25e8cf5ba7a41bee6bfd9ac19d10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  FrontWheels: {fileID: 4236348924815308771}
+  BackWheels: {fileID: 5505647886154547370}
   positionLerpSpeed: 20
   rotationLerpSpeed: 20
   gizmoLineDistance: 7.5
@@ -550,6 +552,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: be7d7d526f85f854186c6cbdfde77cd4, type: 3}
+--- !u!114 &4236348924815308771 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3298666708240514013, guid: be7d7d526f85f854186c6cbdfde77cd4, type: 3}
+  m_PrefabInstance: {fileID: 1661193853034318910}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a26411470d5b3874483bd3ad6ce325fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &9031019720510559605 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7663190963236903243, guid: be7d7d526f85f854186c6cbdfde77cd4, type: 3}
@@ -617,3 +630,14 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7663190963236903243, guid: be7d7d526f85f854186c6cbdfde77cd4, type: 3}
   m_PrefabInstance: {fileID: 7034845208685214583}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &5505647886154547370 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3298666708240514013, guid: be7d7d526f85f854186c6cbdfde77cd4, type: 3}
+  m_PrefabInstance: {fileID: 7034845208685214583}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a26411470d5b3874483bd3ad6ce325fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

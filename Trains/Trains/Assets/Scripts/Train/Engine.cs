@@ -21,7 +21,13 @@ public class Engine : Car
 
     protected override void FixedUpdate()
     {
-        if (AttachToCar.isPlayerControllerAttached()) 
+        if (Input.GetKey(KeyCode.P))
+            Throttle(accleration);
+
+        if (Input.GetKey(KeyCode.L))
+            Throttle(-accleration);
+
+        if (AttachToCar.isPlayerControllerAttached())
         {
             if (Input.GetKey(KeyCode.Q))
                 Throttle(accleration);
