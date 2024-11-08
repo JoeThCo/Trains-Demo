@@ -113,7 +113,6 @@ public class GraphGenerator : MonoBehaviour
     }
     #endregion
 
-
     #region Gameplay
     private void CreateGameplay()
     {

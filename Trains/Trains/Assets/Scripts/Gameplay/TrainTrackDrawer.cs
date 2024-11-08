@@ -112,7 +112,7 @@ public class TrainTrackDrawer : MonoBehaviour
             rightRail.AddPoint(rightPoint);
         }
 
-        sleepersParent = new GameObject("Sleeprs");
+        sleepersParent = new GameObject("Sleepers");
         sleepersParent.transform.parent = trackParent.transform;
 
         // Draw sleepers
