@@ -68,7 +68,7 @@ public class Car : MonoBehaviour
     {
         Rigidbody = GetComponent<Rigidbody>();
         AttachToCar = GetComponentInChildren<AttachToCar>();
-
+        
         Car_OnEdgeChanged(GraphGenerator.GetEdge(0));
         //Debug.LogWarning($"Edge: {CurrentEdge.Index}");
 

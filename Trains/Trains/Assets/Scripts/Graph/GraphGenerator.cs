@@ -138,15 +138,19 @@ public class GraphGenerator : MonoBehaviour
     #region Splines
     private Spline[] GetSplinesFromEdge(Graph graph)
     {
-        List<Spline> splines = new List<Spline>();
-        for (int i = 0; i < graph.Edges.Length; i++)
+        if (graph?.Edges == null)
+            return Array.Empty<Spline>();
+
+        Spline[] splines = new Spline[graph.Edges.Length];
+
+        for (int i = 0; i < splines.Length; i++)
         {
-            Edge edge = graph.Edges[i];
-            Spline spline = new Spline(edge.Knots, false);
-            spline.SetTangentMode(TangentMode.AutoSmooth);
-            splines.Add(spline);
+            ref readonly Edge edge = ref graph.Edges[i];
+            splines[i] = new Spline(edge.Knots, false);
+            splines[i].SetTangentMode(TangentMode.AutoSmooth);
         }
-        return splines.ToArray();
+
+        return splines;
     }
 
     private List<Vector3> GetInterpolatedSplinePoints(Spline spline, float distanceStep)

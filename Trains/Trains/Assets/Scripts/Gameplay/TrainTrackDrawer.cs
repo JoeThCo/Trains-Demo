@@ -1,3 +1,4 @@
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,9 +16,6 @@ public class TrainTrackDrawer : MonoBehaviour
     [SerializeField][Range(0.1f, 2.5f)] private float sleeperDistance = 1;
     [SerializeField][Range(0.1f, 2.5f)] private float sleeperLength = 1;
     [Space(10)]
-    [SerializeField][Range(0.1f, 5f)] private float closedSplineInExtraDistance = 1;
-    [SerializeField][Range(0.1f, 5f)] private float closedSplineOutExtraDistance = 1;
-    [Space(10)]
     [SerializeField] private Color railColor;
     [SerializeField] private Color sleeperColor;
 
@@ -29,6 +27,11 @@ public class TrainTrackDrawer : MonoBehaviour
     private GameObject trackParent;
     private GameObject sleepersParent;
     private GameObject railsParent;
+
+    private void Start()
+    {
+        DrawTracksAndSleepers();
+    }
 
     public void DrawTracksAndSleepers()
     {
@@ -78,57 +81,129 @@ public class TrainTrackDrawer : MonoBehaviour
         rightRail.Color = railColor;
         rightRail.Thickness = thickness;
 
+        List<Vector3> leftPoints = new List<Vector3>();
+        List<Vector3> rightPoints = new List<Vector3>();
+
+        // Calculate points for the entire spline
         for (int i = 0; i <= resolution; i++)
         {
-            if (spline.Closed && i <= 0 || i >= resolution) continue;
-
-            float t = CalculateTForSegment(i, splineLength, (int)resolution);
+            float t = (float)i / resolution;
             Vector3 pointOnSpline = spline.EvaluatePosition(t);
-            Vector3 tangent = spline.EvaluateTangent(t);
-            Vector3 normal = Vector3.Cross(tangent, Vector3.up).normalized;
+            Vector3 tangent;
 
-            pointOnSpline.y = pointOnSpline.y + yOffset;
+            // Special handling for endpoints on closed splines
+            if (spline.Closed && (t == 0f || t == 1f))
+            {
+                // For t=0, use forward difference
+                if (t == 0f)
+                {
+                    Vector3 nextPoint = spline.EvaluatePosition(t + 0.01f);
+                    tangent = (nextPoint - pointOnSpline).normalized;
+                }
+                // For t=1, use backward difference and extend one unit forward
+                else
+                {
+                    Vector3 prevPoint = spline.EvaluatePosition(t - 0.01f);
+                    tangent = (pointOnSpline - prevPoint).normalized;
+
+                    // Extend one unit forward from the end point
+                    pointOnSpline += tangent * railDistance;
+                }
+            }
+            else
+            {
+                tangent = spline.EvaluateTangent(t);
+
+                // Fallback for zero tangents
+                if (tangent.magnitude < 0.001f)
+                {
+                    Vector3 prevPoint = spline.EvaluatePosition(t - 0.01f);
+                    Vector3 nextPoint = spline.EvaluatePosition(t + 0.01f);
+                    tangent = (nextPoint - prevPoint).normalized;
+                }
+            }
+
+            Vector3 normal = Vector3.Cross(tangent, Vector3.up).normalized;
+            pointOnSpline.y += yOffset;
+
+            leftPoints.Add(pointOnSpline + normal * railDistance);
+            rightPoints.Add(pointOnSpline - normal * railDistance);
+        }
+
+        // For closed splines, ensure the rails don't match up at the end
+        if (spline.Closed)
+        {
+            // Get the tangent at the end (t=1)
+            Vector3 endPoint = spline.EvaluatePosition(1f);
+            Vector3 endTangent = spline.EvaluateTangent(1f);
+
+            // Fallback for zero tangent
+            if (endTangent.magnitude < 0.001f)
+            {
+                Vector3 prevPoint = spline.EvaluatePosition(0.99f);
+                endTangent = (endPoint - prevPoint).normalized;
+            }
+
+            // Extend the end points one rail distance forward
+            Vector3 extendedEndPoint = endPoint + endTangent * railDistance;
+            Vector3 endNormal = Vector3.Cross(endTangent, Vector3.up).normalized;
+
+            // Replace the last points with extended versions
+            leftPoints[leftPoints.Count - 1] = extendedEndPoint + endNormal * railDistance;
+            rightPoints[rightPoints.Count - 1] = extendedEndPoint - endNormal * railDistance;
+        }
+
+        // Add all points to the rails
+        for (int i = 0; i < leftPoints.Count; i++)
+        {
+            leftRail.AddPoint(leftPoints[i]);
+            rightRail.AddPoint(rightPoints[i]);
+        }
+
+        // Sleepers drawing (with similar endpoint handling)
+        sleepersParent = new GameObject("Sleepers");
+        sleepersParent.transform.parent = trackParent.transform;
+
+        for (int i = 0; i <= numberOfSleepers; i++)
+        {
+            float sleeperT = (float)i / numberOfSleepers;
+            Vector3 pointOnSpline = spline.EvaluatePosition(sleeperT);
+            Vector3 tangent;
+
+            // Handle endpoints for closed splines
+            if (spline.Closed && (sleeperT == 0f || sleeperT == 1f))
+            {
+                if (sleeperT == 0f)
+                {
+                    Vector3 nextPoint = spline.EvaluatePosition(sleeperT + 0.01f);
+                    tangent = (nextPoint - pointOnSpline).normalized;
+                }
+                else
+                {
+                    Vector3 prevPoint = spline.EvaluatePosition(sleeperT - 0.01f);
+                    tangent = (pointOnSpline - prevPoint).normalized;
+                    pointOnSpline += tangent * railDistance;
+                }
+            }
+            else
+            {
+                tangent = spline.EvaluateTangent(sleeperT);
+
+                if (tangent.magnitude < 0.001f)
+                {
+                    Vector3 prevPoint = spline.EvaluatePosition(sleeperT - 0.01f);
+                    Vector3 nextPoint = spline.EvaluatePosition(sleeperT + 0.01f);
+                    tangent = (nextPoint - prevPoint).normalized;
+                }
+            }
+
+            Vector3 normal = Vector3.Cross(tangent, Vector3.up).normalized;
+            pointOnSpline.y += yOffset;
 
             Vector3 leftPoint = pointOnSpline + normal * railDistance;
             Vector3 rightPoint = pointOnSpline - normal * railDistance;
 
-            Vector3 oppositeTangent = -tangent.normalized * sleeperDistance;
-            Vector3 backLeftPoint = leftPoint;
-            Vector3 backRightPoint = rightPoint;
-
-            if (i == 1)
-            {
-                leftPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
-                rightPoint += oppositeTangent * railDistance * closedSplineInExtraDistance;
-            }
-
-            if (i == resolution - 1)
-            {
-                leftPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
-                rightPoint -= oppositeTangent * railDistance * closedSplineOutExtraDistance;
-            }
-
-            leftRail.AddPoint(leftPoint);
-            rightRail.AddPoint(rightPoint);
-        }
-
-        sleepersParent = new GameObject("Sleepers");
-        sleepersParent.transform.parent = trackParent.transform;
-
-        // Draw sleepers
-        for (int i = 0; i <= numberOfSleepers; i++)
-        {
-            float sleeperT = CalculateTForSegment(i, splineLength, numberOfSleepers);
-
-            Vector3 pointOnSpline = spline.EvaluatePosition(sleeperT);
-            pointOnSpline.y = pointOnSpline.y + yOffset;
-
-            Vector3 normal = CalculateNormalAtPoint(spline, sleeperT);
-
-            Vector3 leftPoint = pointOnSpline + normal * sleeperDistance;
-            Vector3 rightPoint = pointOnSpline - normal * sleeperDistance;
-
-            Vector3 midpoint = (leftPoint + rightPoint) / 2;
+            Vector3 midpoint = (leftPoint + rightPoint) * 0.5f;
             Vector3 direction = (rightPoint - leftPoint).normalized * sleeperLength;
 
             Line line = Instantiate(sleeperPrefab, Vector3.up * yOffset, Quaternion.identity, sleepersParent.transform);
@@ -138,17 +213,5 @@ public class TrainTrackDrawer : MonoBehaviour
             line.Start = midpoint - direction;
             line.End = midpoint + direction;
         }
-    }
-
-    private float CalculateTForSegment(int index, float splineLength, int segments)
-    {
-        float distance = index * (splineLength / segments);
-        return distance / splineLength;
-    }
-
-    private Vector3 CalculateNormalAtPoint(Spline spline, float t)
-    {
-        Vector3 tangent = spline.EvaluateTangent(t);
-        return Vector3.Cross(tangent, Vector3.up).normalized;
     }
 }
